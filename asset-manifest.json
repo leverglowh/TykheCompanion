@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/TykheCompanion/static/css/main.a5eea12c.chunk.css",
+    "main.js": "/TykheCompanion/static/js/main.22ea3c14.chunk.js",
+    "main.js.map": "/TykheCompanion/static/js/main.22ea3c14.chunk.js.map",
+    "runtime-main.js": "/TykheCompanion/static/js/runtime-main.f4cd1830.js",
+    "runtime-main.js.map": "/TykheCompanion/static/js/runtime-main.f4cd1830.js.map",
+    "static/js/2.cf8b3ec0.chunk.js": "/TykheCompanion/static/js/2.cf8b3ec0.chunk.js",
+    "static/js/2.cf8b3ec0.chunk.js.map": "/TykheCompanion/static/js/2.cf8b3ec0.chunk.js.map",
+    "static/js/3.e8143e74.chunk.js": "/TykheCompanion/static/js/3.e8143e74.chunk.js",
+    "static/js/3.e8143e74.chunk.js.map": "/TykheCompanion/static/js/3.e8143e74.chunk.js.map",
+    "index.html": "/TykheCompanion/index.html",
+    "static/css/main.a5eea12c.chunk.css.map": "/TykheCompanion/static/css/main.a5eea12c.chunk.css.map",
+    "static/js/2.cf8b3ec0.chunk.js.LICENSE.txt": "/TykheCompanion/static/js/2.cf8b3ec0.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.f4cd1830.js",
+    "static/js/2.cf8b3ec0.chunk.js",
+    "static/css/main.a5eea12c.chunk.css",
+    "static/js/main.22ea3c14.chunk.js"
+  ]
+}
