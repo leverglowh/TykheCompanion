@@ -33,6 +33,19 @@ const App = () => {
     localStorage.setItem("inv", JSON.stringify(invData));
   }, [invData]);
 
+  const dataCheck = (tier: number, name: string, uid: number) => {
+    const uidString = uid + "";
+    return !(
+      tier > 5 ||
+      tier < 1 ||
+      name.length <= 0 ||
+      uidString.includes(".") ||
+      uidString.includes(",") ||
+      uidString.length !== 4 ||
+      uid < 1000
+    );
+  };
+
   const handleInputChange = (e: any) => {
     setInputCardValue(e.target.value);
   };
@@ -93,7 +106,7 @@ const App = () => {
       uid = Number(temp_vals[temp_vals.length - 1]);
       name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
 
-      if (!tier || !name || !uid) {
+      if (!dataCheck(tier, name, uid)) {
         // retry with space as split string
         temp_vals = [
           ...inputString.split(" ").map((word: string) => word.trim()),
@@ -106,7 +119,7 @@ const App = () => {
     }
 
     // sanity check
-    if (!tier || !name || !uid) {
+    if (!dataCheck(tier, name, uid)) {
       alert("Non valid input, abort! abort!");
       return;
     }
@@ -230,7 +243,7 @@ const App = () => {
             const temp_vals = [...line.split("-").map(word => word.trim())];
             const uid = Number(temp_vals[temp_vals.length - 1]);
             const name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-            if (!last_cat || !tier || !name || !uid) {
+            if (!last_cat || !dataCheck(tier, name, uid)) {
               // eslint-disable-next-line no-throw-literal
               throw "error, bye";
             } else {
