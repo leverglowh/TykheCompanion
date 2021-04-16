@@ -232,6 +232,7 @@ const App = () => {
         const built_inv: any = {};
         let last_cat = "";
         const lines = removed_locks.split("\n");
+        let invalidCounter = 0;
         lines.forEach(line => {
           if (line.startsWith(":")) {
             // is inv item line
@@ -241,13 +242,8 @@ const App = () => {
             const uid = Number(temp_vals[temp_vals.length - 1]);
             const name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
             if (!last_cat || !dataCheck(tier, name, uid)) {
-              alert('Non valid input, abort! abort!');
-              const input = document.getElementById("initial-inv-input") as HTMLInputElement;
-              if (input) {
-                input.value = "";
-              }
-              // eslint-disable-next-line no-throw-literal
-              throw "error, bye";
+              invalidCounter++;
+              return;
             } else {
               built_inv[last_cat].push({
                 tier,
@@ -268,6 +264,7 @@ const App = () => {
             }
           }
         });
+        alert(`Found ${invalidCounter} errors in file.`);
         // now inv should be complete
         const sortedInv: any = {};
         const keys = [...Object.keys(built_inv)].sort();
