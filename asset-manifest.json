@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/TykheCompanion/static/css/main.38a66ee6.chunk.css",
-    "main.js": "/TykheCompanion/static/js/main.b40d51c2.chunk.js",
-    "main.js.map": "/TykheCompanion/static/js/main.b40d51c2.chunk.js.map",
+    "main.js": "/TykheCompanion/static/js/main.d048a8e9.chunk.js",
+    "main.js.map": "/TykheCompanion/static/js/main.d048a8e9.chunk.js.map",
     "runtime-main.js": "/TykheCompanion/static/js/runtime-main.f4cd1830.js",
     "runtime-main.js.map": "/TykheCompanion/static/js/runtime-main.f4cd1830.js.map",
     "static/js/2.94caac1b.chunk.js": "/TykheCompanion/static/js/2.94caac1b.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.f4cd1830.js",
     "static/js/2.94caac1b.chunk.js",
     "static/css/main.38a66ee6.chunk.css",
-    "static/js/main.b40d51c2.chunk.js"
+    "static/js/main.d048a8e9.chunk.js"
   ]
 }
