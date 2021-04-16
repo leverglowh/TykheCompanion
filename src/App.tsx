@@ -36,6 +36,9 @@ const App = () => {
   const dataCheck = (tier: number, name: string, uid: number) => {
     const uidString = uid + "";
     return !(
+      !tier ||
+      !name ||
+      !uid ||
       tier > 5 ||
       tier < 1 ||
       name.length <= 0 ||
@@ -230,12 +233,6 @@ const App = () => {
         let last_cat = "";
         const lines = removed_locks.split("\n");
         lines.forEach(line => {
-          // Sanity check
-          if (!CARD_INPUT_REGEX.test(line)) {
-            alert("Non valid input, abort! abort!");
-            return;
-          }
-
           if (line.startsWith(":")) {
             // is inv item line
             const tier = Number(line[1]);
@@ -244,6 +241,11 @@ const App = () => {
             const uid = Number(temp_vals[temp_vals.length - 1]);
             const name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
             if (!last_cat || !dataCheck(tier, name, uid)) {
+              alert('Non valid input, abort! abort!');
+              const input = document.getElementById("initial-inv-input") as HTMLInputElement;
+              if (input) {
+                input.value = "";
+              }
               // eslint-disable-next-line no-throw-literal
               throw "error, bye";
             } else {
