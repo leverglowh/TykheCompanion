@@ -8,6 +8,7 @@ const App = () => {
   const [editCat, setEditCat] = useState("");
   const [editUid, setEditUid] = useState(0);
   const [inputCardValue, setInputCardValue] = useState("");
+  const [errorLog, setErrorLog] = useState<string[]>([]);
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
     if (loadedInv) {
@@ -66,6 +67,49 @@ const App = () => {
     setInputCardValue("");
   };
 
+  const parseCard = (line: string) => {
+    let tier = 0;
+    let uid = 0;
+    let name = "";
+    if (line?.[0] === ":") {
+      // copied from inv
+      tier = Number(line[1]);
+      const temp_vals = [
+        ...line.split("-").map((word: string) => word.trim()),
+      ].filter(w => w.length > 0); // remove empty words
+      uid = Number(temp_vals[temp_vals.length - 1]);
+      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
+    } else {
+      let temp_vals = [];
+
+      temp_vals = [
+        ...line.split("-").map((word: string) => word.trim()),
+      ].filter(w => w.length > 0);
+
+      tier = Number(line[0]);
+      uid = Number(temp_vals[temp_vals.length - 1]);
+      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
+
+      if (!dataCheck(tier, name, uid)) {
+        // retry with space as split string
+        temp_vals = [
+          ...line.split(" ").map((word: string) => word.trim()),
+        ].filter(w => w.length > 0);
+
+        tier = Number(line[0]);
+        uid = Number(temp_vals[temp_vals.length - 1]);
+        name = temp_vals.slice(1, temp_vals.length - 1).join(" ");
+      }
+    }
+
+    // sanity check
+    if (!dataCheck(tier, name, uid)) {
+      return null;
+    }
+
+    return { tier, name, uid };
+  };
+
   const handleNewCardSubmit = (e: any) => {
     const inputString: string = (inputCardValue || "")
       .replace(":lock:", "")
@@ -87,42 +131,9 @@ const App = () => {
       return;
     }
 
-    let tier = 0;
-    let uid = 0;
-    let name = "";
-    if (inputString?.[0] === ":") {
-      // copied from inv
-      tier = Number(inputString[1]);
-      const temp_vals = [
-        ...inputString.split("-").map((word: string) => word.trim()),
-      ].filter(w => w.length > 0); // remove empty words
-      uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-    } else {
-      let temp_vals = [];
+    const parsedCard = parseCard(inputString);
 
-      temp_vals = [
-        ...inputString.split("-").map((word: string) => word.trim()),
-      ].filter(w => w.length > 0);
-
-      tier = Number(inputString[0]);
-      uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-
-      if (!dataCheck(tier, name, uid)) {
-        // retry with space as split string
-        temp_vals = [
-          ...inputString.split(" ").map((word: string) => word.trim()),
-        ].filter(w => w.length > 0);
-
-        tier = Number(inputString[0]);
-        uid = Number(temp_vals[temp_vals.length - 1]);
-        name = temp_vals.slice(1, temp_vals.length - 1).join(" ");
-      }
-    }
-
-    // sanity check
-    if (!dataCheck(tier, name, uid)) {
+    if (!parsedCard) {
       alert("Non valid input, abort! abort!");
       return;
     }
@@ -131,7 +142,7 @@ const App = () => {
       // edit existing
       const card = (invData[editCat] as ICard[]).find(c => c.uid === editUid);
       // if (!card) BOH
-      if (name !== card?.name) {
+      if (parsedCard?.name !== card?.name) {
         alert(
           "Attention: you input a different card name, the old card will be replaced."
         );
@@ -140,11 +151,7 @@ const App = () => {
         ...invData,
         [editCat]: [
           ...invData[editCat].filter((c: ICard) => c.uid !== editUid),
-          {
-            tier,
-            name,
-            uid,
-          },
+          { ...parsedCard },
         ].sort(cardSort),
       });
 
@@ -154,7 +161,7 @@ const App = () => {
     } else {
       Object.keys(invData).forEach(cat => {
         const isDuplicate = !!(invData[cat] as ICard[]).find(
-          c => c.uid === uid
+          c => c.uid === parsedCard?.uid
         );
         if (isDuplicate) {
           alert("Duplicate UID, please check your data.");
@@ -165,14 +172,7 @@ const App = () => {
 
       setInvData({
         ...invData,
-        [editCat]: [
-          ...invData[editCat],
-          {
-            tier,
-            name,
-            uid,
-          },
-        ].sort(cardSort),
+        [editCat]: [...invData[editCat], { ...parsedCard }].sort(cardSort),
       });
     }
 
@@ -234,21 +234,17 @@ const App = () => {
         const lines = removed_locks.split("\n");
         let invalidCounter = 0;
         lines.forEach(line => {
-          if (line.startsWith(":")) {
+          if (line.startsWith(":") || /^[1-5][^0-9]+/.test(line)) {
             // is inv item line
-            const tier = Number(line[1]);
+            const parsedCard = parseCard(line.trim());
 
-            const temp_vals = [...line.split("-").map(word => word.trim())];
-            const uid = Number(temp_vals[temp_vals.length - 1]);
-            const name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-            if (!last_cat || !dataCheck(tier, name, uid)) {
+            if (!last_cat || !parsedCard) {
               invalidCounter++;
+              setErrorLog([...errorLog, line]);
               return;
             } else {
               built_inv[last_cat].push({
-                tier,
-                name,
-                uid,
+                ...parsedCard,
               });
             }
           } else {
@@ -264,7 +260,7 @@ const App = () => {
             }
           }
         });
-        alert(`Found ${invalidCounter} errors in file.`);
+        invalidCounter > 0 && alert(`Found ${invalidCounter} errors in file.`);
         // now inv should be complete
         const sortedInv: any = {};
         const keys = [...Object.keys(built_inv)].sort();
