@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useState } from "react";
 import "./App.css";
-import { cardSort } from "./utils/general-utils";
+import { cardSort, CARD_INPUT_REGEX } from "./utils/general-utils";
 import { ICard } from "./model/card.model";
 
 const App = () => {
@@ -21,16 +21,12 @@ const App = () => {
         setEditCat("");
         setInputCardValue("");
         document
-          .getElementById(editUid + "")?.style.setProperty('text-decoration', 'none');
+          .getElementById(editUid + "")
+          ?.style.setProperty("text-decoration", "none");
         setEditUid(0);
       }
     };
   }, [editUid]);
-
-  useEffect(() => {
-    if (editCat) {
-    }
-  }, [editCat]);
 
   useEffect(() => {
     if (!invData) return;
@@ -41,6 +37,12 @@ const App = () => {
     setInputCardValue(e.target.value);
   };
 
+  const handleInputKeyUp = (e: any) => {
+    if (e.key === "Enter") {
+      document.getElementById("new-card-input-submit-button")?.click();
+    }
+  };
+
   const addNewCard = (e: any) => {
     e.persist();
     const cat = e.target?.dataset?.cat;
@@ -49,7 +51,26 @@ const App = () => {
   };
 
   const handleNewCardSubmit = (e: any) => {
-    const inputString: string = (inputCardValue || "").replace(":lock:", "");
+    const inputString: string = (inputCardValue || "")
+      .replace(":lock:", "")
+      .trim();
+
+    if (inputString === "JSON") {
+      // secret command
+      document.getElementById("downloadJSON")?.click();
+      setEditCat("");
+      setEditUid(0);
+      setInputCardValue("");
+      e.preventDefault();
+      return;
+    }
+
+    // Sanity check
+    if (!CARD_INPUT_REGEX.test(inputString)) {
+      alert("Non valid input, abort! abort!");
+      return;
+    }
+
     let tier = 0;
     let uid = 0;
     let name = "";
@@ -58,29 +79,35 @@ const App = () => {
       tier = Number(inputString[1]);
       const temp_vals = [
         ...inputString.split("-").map((word: string) => word.trim()),
-      ];
+      ].filter(w => w.length > 0); // remove empty words
       uid = Number(temp_vals[temp_vals.length - 1]);
       name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
     } else {
       let temp_vals = [];
-      let splitString = "";
-      if (inputString?.[3] === "-") {
-        splitString = "-";
-      } else {
-        splitString = " ";
-      }
+
       temp_vals = [
-        ...inputString.split(splitString).map((word: string) => word.trim()),
-      ];
+        ...inputString.split("-").map((word: string) => word.trim()),
+      ].filter(w => w.length > 0);
+
       tier = Number(inputString[0]);
       uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals
-        .slice(1, temp_vals.length - 1)
-        .join(splitString === "-" ? " - " : splitString);
+      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
+
+      if (!tier || !name || !uid) {
+        // retry with space as split string
+        temp_vals = [
+          ...inputString.split(" ").map((word: string) => word.trim()),
+        ].filter(w => w.length > 0);
+
+        tier = Number(inputString[0]);
+        uid = Number(temp_vals[temp_vals.length - 1]);
+        name = temp_vals.slice(1, temp_vals.length - 1).join(" ");
+      }
     }
 
+    // sanity check
     if (!tier || !name || !uid) {
-      alert("Non valid input, abort abort!");
+      alert("Non valid input, abort! abort!");
       return;
     }
 
@@ -190,6 +217,12 @@ const App = () => {
         let last_cat = "";
         const lines = removed_locks.split("\n");
         lines.forEach(line => {
+          // Sanity check
+          if (!CARD_INPUT_REGEX.test(line)) {
+            alert("Non valid input, abort! abort!");
+            return;
+          }
+
           if (line.startsWith(":")) {
             // is inv item line
             const tier = Number(line[1]);
@@ -197,7 +230,7 @@ const App = () => {
             const temp_vals = [...line.split("-").map(word => word.trim())];
             const uid = Number(temp_vals[temp_vals.length - 1]);
             const name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-            if (!last_cat) {
+            if (!last_cat || !tier || !name || !uid) {
               // eslint-disable-next-line no-throw-literal
               throw "error, bye";
             } else {
@@ -288,46 +321,62 @@ const App = () => {
                       autoFocus
                       value={inputCardValue}
                       onChange={handleInputChange}
+                      onKeyUp={handleInputKeyUp}
                       placeholder='2s Hawkeye (Kate Bishop) 2333'
                     />
                     <input
                       type='button'
+                      id='new-card-input-submit-button'
                       value='✓'
                       onClick={handleNewCardSubmit}
                     />
                   </div>
                 )}
-                <div className="hide-overflow">
-                {(invData[cat] as ICard[]).map((card, i) => (
-                  <Fragment key={card.uid}>
-                    {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
-                    <div className={"card star" + card.tier} id={card.uid + ""}>
-                      <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
-                      <span
-                        className='edit-card-button unselectable'
-                        data-cat={cat}
-                        data-uid={card.uid}
-                        onClick={editCard}
+                <div className='hide-overflow'>
+                  {(invData[cat] as ICard[]).map((card, i) => (
+                    <Fragment key={card.uid}>
+                      {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
+                      <div
+                        className={"card star" + card.tier}
+                        id={card.uid + ""}
                       >
-                        <b>&#9998;</b>
-                      </span>
-                      <span
-                        className='delete-card-button unselectable'
-                        data-cat={cat}
-                        data-uid={card.uid}
-                        onClick={removeCard}
-                      >
-                        <b>&times;</b>
-                      </span>
-                    </div>
-                  </Fragment>
-                ))}
+                        <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
+                        <span
+                          className='edit-card-button unselectable'
+                          data-cat={cat}
+                          data-uid={card.uid}
+                          onClick={editCard}
+                        >
+                          <b>&#9998;</b>
+                        </span>
+                        <span
+                          className='delete-card-button unselectable'
+                          data-cat={cat}
+                          data-uid={card.uid}
+                          onClick={removeCard}
+                        >
+                          <b>&times;</b>
+                        </span>
+                      </div>
+                    </Fragment>
+                  ))}
                 </div>
               </div>
             </div>
           );
         })
       )}
+      <a
+        id='downloadJSON'
+        href={
+          "data:text/json;charset=utf-8," +
+          encodeURIComponent(JSON.stringify(invData))
+        }
+        download='inv.json'
+        style={{ display: "none" }}
+      >
+        DOWNLOAD JSON
+      </a>
     </div>
   );
 };
