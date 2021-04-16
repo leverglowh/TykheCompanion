@@ -16,6 +16,23 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    document.onkeyup = (e: any) => {
+      if (e.key === "Escape") {
+        setEditCat("");
+        setInputCardValue("");
+        document
+          .getElementById(editUid + "")?.style.setProperty('text-decoration', 'none');
+        setEditUid(0);
+      }
+    };
+  }, [editUid]);
+
+  useEffect(() => {
+    if (editCat) {
+    }
+  }, [editCat]);
+
+  useEffect(() => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
   }, [invData]);
@@ -28,6 +45,7 @@ const App = () => {
     e.persist();
     const cat = e.target?.dataset?.cat;
     setEditCat(cat);
+    setInputCardValue("");
   };
 
   const handleNewCardSubmit = (e: any) => {
@@ -45,47 +63,62 @@ const App = () => {
       name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
     } else {
       let temp_vals = [];
-      let splitString = '';
-      if (inputString?.[3] === '-') {
-        splitString = '-';
+      let splitString = "";
+      if (inputString?.[3] === "-") {
+        splitString = "-";
       } else {
-        splitString = ' '
+        splitString = " ";
       }
-      temp_vals = [...inputString.split(splitString).map((word: string) => word.trim()),];
+      temp_vals = [
+        ...inputString.split(splitString).map((word: string) => word.trim()),
+      ];
       tier = Number(inputString[0]);
       uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals.slice(1, temp_vals.length - 1).join(splitString === '-' ? ' - ' : splitString);
+      name = temp_vals
+        .slice(1, temp_vals.length - 1)
+        .join(splitString === "-" ? " - " : splitString);
     }
 
-    console.log(tier);
-    console.log(name);
-    console.log(uid);
+    if (!tier || !name || !uid) {
+      alert("Non valid input, abort abort!");
+      return;
+    }
+
     if (editUid) {
       // edit existing
       const card = (invData[editCat] as ICard[]).find(c => c.uid === editUid);
       // if (!card) BOH
       if (name !== card?.name) {
-        alert('Attention: you input a different card name, the old card will be replaced.')
+        alert(
+          "Attention: you input a different card name, the old card will be replaced."
+        );
       }
-      // setInvData({
-      //   ...invData,
-      //   [editCat]: [
-      //     ...invData[editCat].filter((c: ICard) => c.uid !== editUid),
-      //     {
-      //       tier,
-      //       name,
-      //       uid,
-      //     },
-      //   ].sort(cardSort),
-      // });
+      setInvData({
+        ...invData,
+        [editCat]: [
+          ...invData[editCat].filter((c: ICard) => c.uid !== editUid),
+          {
+            tier,
+            name,
+            uid,
+          },
+        ].sort(cardSort),
+      });
+
+      document
+        .getElementById(editUid + "")
+        ?.style.removeProperty("text-decoration");
     } else {
-      const isDuplicate = (invData[editCat] as ICard[]).find(
-        c => c.uid === uid
-      );
-      if (isDuplicate) {
-        alert("Duplicate UID, please check your data.");
-        return;
-      }
+      Object.keys(invData).forEach(cat => {
+        const isDuplicate = !!(invData[cat] as ICard[]).find(
+          c => c.uid === uid
+        );
+        if (isDuplicate) {
+          alert("Duplicate UID, please check your data.");
+          // eslint-disable-next-line no-throw-literal
+          throw "Duplicate UID, please check your data.";
+        }
+      });
 
       setInvData({
         ...invData,
@@ -264,6 +297,7 @@ const App = () => {
                     />
                   </div>
                 )}
+                <div className="hide-overflow">
                 {(invData[cat] as ICard[]).map((card, i) => (
                   <Fragment key={card.uid}>
                     {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
@@ -288,6 +322,7 @@ const App = () => {
                     </div>
                   </Fragment>
                 ))}
+                </div>
               </div>
             </div>
           );

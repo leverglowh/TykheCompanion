@@ -42,9 +42,14 @@
   padding: 5px;
 }
 
+.hide-overflow {
+  overflow-y: auto;
+  max-height: 86vh;
+}
+
 .card {
   position: relative;
-  padding-right: 23px;
+  padding-right: 30px;
 }
 
 .edit-card-button {
@@ -55,7 +60,7 @@
 }
 
 .delete-card-button {
-  display: none;
+  visibility: hidden;
   cursor: pointer;
   color: red;
   position: absolute;
@@ -64,7 +69,7 @@
 }
 
 .card:hover .delete-card-button {
-  display: block;
+  visibility: visible;
 }
 
 #new-card-form {
@@ -92,7 +97,7 @@
 
   /* Position the tooltip */
   position: absolute;
-  z-index: 1;
+  z-index: 5;
   top: 100%;
   left: 50%; 
   margin-left: -175px;
@@ -140,4 +145,8 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
 }
