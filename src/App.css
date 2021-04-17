@@ -8,6 +8,18 @@
   top: 50%;
   width: 100%;
   text-align: center;
+  display: flex;
+  justify-content: space-around;
+}
+
+.text-align-left {
+  text-align: left;
+}
+
+.backup-id-input-container {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: row;
 }
 
 #new-card-input-box {
@@ -34,7 +46,6 @@ hr {
 
 .error-log-index {
   color: #999999;
-  
 }
 
 .cat {

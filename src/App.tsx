@@ -31,7 +31,10 @@ const App = () => {
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
           localStorage.setItem("binId", JSON.parse(req.response).metadata.id);
-          alert('Save this id so you can restore your inv in future: ' + JSON.parse(req.response).metadata.id);
+          alert(
+            "Save this id so you can restore your inv in future: " +
+              JSON.parse(req.response).metadata.id
+          );
         }
       };
 
@@ -42,13 +45,13 @@ const App = () => {
         "X-Master-Key",
         "$2b$10$ckVgM1xPqSGsv8uaycGJNuOEQRN74Rq3HMCQLNpqmKFT37bAZprzC"
       );
-      req.send(data ? JSON.stringify(data) : localStorage.getItem('inv'));
+      req.send(data ? JSON.stringify(data) : localStorage.getItem("inv"));
     } else {
       let req = new XMLHttpRequest();
 
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
-          console.log(JSON.parse(req.response));
+          console.log(JSON.parse(req.response).metadata ? 'Sync success' : 'Sync error');
         }
       };
 
@@ -58,17 +61,67 @@ const App = () => {
         "X-Master-Key",
         "$2b$10$ckVgM1xPqSGsv8uaycGJNuOEQRN74Rq3HMCQLNpqmKFT37bAZprzC"
       );
-      req.send(data ? JSON.stringify(data) : localStorage.getItem('inv'));
+      req.send(data ? JSON.stringify(data) : localStorage.getItem("inv"));
     }
   }, []);
-  
+
+  const fetchDataFromJsonBin = useCallback((binId: string) => {
+    let req = new XMLHttpRequest();
+
+    req.onreadystatechange = () => {
+      if (req.readyState === XMLHttpRequest.DONE) {
+        const inv = JSON.parse(req.response).record;
+        if (typeof inv !== "object") {
+          alert(
+            "Invalid data, please check your backup id or upload an inv file."
+          );
+          (document.getElementById(
+            "backup-id-input"
+          ) as HTMLInputElement).value = "";
+          localStorage.clear();
+          return;
+        }
+        const cats = Object.keys(inv);
+        const isValid = cats.every(
+          cat =>
+          Array.isArray(inv[cat]) &&
+            inv[cat].every((card: any) =>
+              dataCheck(card.tier, card.name, card.uid)
+            )
+        );
+        if (isValid) {
+          localStorage.setItem("inv", JSON.stringify(inv));
+          localStorage.setItem("binId", binId);
+          window.location.reload();
+        } else {
+          alert(
+            "Invalid data, please check your backup id or upload an inv file."
+          );
+          (document.getElementById(
+            "backup-id-input"
+          ) as HTMLInputElement).value = "";
+          localStorage.clear();
+          return;
+        }
+      }
+    };
+
+    req.open("GET", `https://api.jsonbin.io/v3/b/${binId}/latest`, true);
+    req.send();
+  }, []);
+
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
+    const binId = localStorage.getItem("binId");
     if (loadedInv) {
       setInvData(JSON.parse(loadedInv));
       remoteSync(JSON.parse(loadedInv));
+    } else {
+      if (binId) {
+        fetchDataFromJsonBin(binId);
+      }
     }
-  }, [remoteSync]);
+  }, [remoteSync, fetchDataFromJsonBin]);
 
   useEffect(() => {
     document.onkeyup = (e: any) => {
@@ -87,6 +140,20 @@ const App = () => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
   }, [invData]);
+
+  const handleBackupIdInput = (e: any) => {
+    const id: string = (document.getElementById(
+      "backup-id-input"
+    ) as HTMLInputElement)?.value;
+
+    if (!id) {
+      alert(
+        "Invalid input, please check your backup id or upload an inv file."
+      );
+      return;
+    }
+    fetchDataFromJsonBin(id);
+  };
 
   const dataCheck = (tier: number, name: string, uid: number) => {
     const uidString = uid + "";
@@ -108,9 +175,9 @@ const App = () => {
     setInputCardValue(e.target.value);
   };
 
-  const handleInputKeyUp = (e: any) => {
+  const handleInputKeyUp = (e: any, elementId: string) => {
     if (e.key === "Enter") {
-      document.getElementById("new-card-input-submit-button")?.click();
+      document.getElementById(elementId)?.click();
     }
   };
 
@@ -326,7 +393,6 @@ const App = () => {
       var reader = new FileReader();
       reader.readAsText(file, "UTF-8");
       reader.onload = function (evt) {
-        // console.log(evt.target.result);
         const removed_locks = (evt?.target?.result as string)?.replace(
           ":lock:",
           ""
@@ -418,17 +484,35 @@ const App = () => {
     <div className='main-container'>
       {!invData ? (
         <div className='file-input-container'>
-          <label htmlFor='initial-inv-input'>
-            Hi, please upload inventory text file.
-          </label>
-          <br />
-          <input
-            type='file'
-            name='initial-inv-input'
-            id='initial-inv-input'
-            accept='text/plain'
-            onChange={handleInvInput}
-          />
+          <div>
+            <div className='text-align-left'>
+              Hi, please upload inventory text file.
+            </div>
+            <br />
+            <input
+              type='file'
+              name='initial-inv-input'
+              id='initial-inv-input'
+              accept='text/plain'
+              onChange={handleInvInput}
+            />
+          </div>
+          <div>
+            <div className='text-align-left'>Or input the backup id:</div>
+            <div className='backup-id-input-container'>
+              <Form.Control
+                placeholder='607b400f0ed6f819beae5284'
+                id='backup-id-input'
+                onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                  handleInputKeyUp(e, "backup-id-input-button")
+                }
+              />
+              &nbsp;
+              <Button id='backup-id-input-button' onClick={handleBackupIdInput}>
+                Enter
+              </Button>
+            </div>
+          </div>
         </div>
       ) : (
         Object.keys(invData)
@@ -469,7 +553,9 @@ const App = () => {
                         autoFocus
                         value={inputCardValue}
                         onChange={handleInputChange}
-                        onKeyUp={handleInputKeyUp}
+                        onKeyUp={e =>
+                          handleInputKeyUp(e, "new-card-input-submit-button")
+                        }
                         placeholder='2s Hawkeye (Kate Bishop) 2333'
                       />
                       <input
@@ -582,10 +668,17 @@ const App = () => {
               id='new-subcat-input'
               placeholder='Marvel Cinematic Universe'
               autoFocus
+              onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                handleInputKeyUp(e, "new-subcat-input-button")
+              }
             />
           </Modal.Body>
           <Modal.Footer>
-            <Button variant='primary' onClick={addSub}>
+            <Button
+              variant='primary'
+              id='new-subcat-input-button'
+              onClick={addSub}
+            >
               ADD
             </Button>
           </Modal.Footer>
