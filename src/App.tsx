@@ -316,6 +316,8 @@ const App = () => {
         if (invalidCounter > 0) {
           setErrorLog(tempLog);
           setShowResult(true);
+        } else {
+          window.location.reload();
         }
       };
       reader.onerror = function (evt) {
