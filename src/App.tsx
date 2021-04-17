@@ -140,6 +140,13 @@ const App = () => {
       return;
     }
 
+    if (inputString === "CLEAR") {
+      // secret command
+      localStorage.clear();
+      window.location.reload();
+      return;
+    }
+
     // Sanity check
     if (!CARD_INPUT_REGEX.test(inputString)) {
       alert("Non valid input, abort! abort!");
