@@ -1,11 +1,11 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
 import "./App.css";
 import { cardSort, CARD_INPUT_REGEX } from "./utils/general-utils";
 import { ICard } from "./model/card.model";
 import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
-import Form from 'react-bootstrap/Form';
+import Form from "react-bootstrap/Form";
 
 const App = () => {
   const [invData, setInvData] = useState<any>(null);
@@ -21,12 +21,54 @@ const App = () => {
   const [errorLog, setErrorLog] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [createNewCat, setCreateNewCat] = useState(false);
+
+  const remoteSync = useCallback((data?: any) => {
+    const binId = localStorage.getItem("binId");
+    if (!binId) {
+      // create a new bin
+      let req = new XMLHttpRequest();
+
+      req.onreadystatechange = () => {
+        if (req.readyState === XMLHttpRequest.DONE) {
+          localStorage.setItem("binId", JSON.parse(req.response).metadata.id);
+          alert('Save this id so you can restore your inv in future: ' + JSON.parse(req.response).metadata.id);
+        }
+      };
+
+      req.open("POST", "https://api.jsonbin.io/v3/b", true);
+      req.setRequestHeader("Content-Type", "application/json");
+      req.setRequestHeader("X-BIN-PRIVATE", "false");
+      req.setRequestHeader(
+        "X-Master-Key",
+        "$2b$10$ckVgM1xPqSGsv8uaycGJNuOEQRN74Rq3HMCQLNpqmKFT37bAZprzC"
+      );
+      req.send(data ? JSON.stringify(data) : localStorage.getItem('inv'));
+    } else {
+      let req = new XMLHttpRequest();
+
+      req.onreadystatechange = () => {
+        if (req.readyState === XMLHttpRequest.DONE) {
+          console.log(JSON.parse(req.response));
+        }
+      };
+
+      req.open("PUT", "https://api.jsonbin.io/v3/b/" + binId, true);
+      req.setRequestHeader("Content-Type", "application/json");
+      req.setRequestHeader(
+        "X-Master-Key",
+        "$2b$10$ckVgM1xPqSGsv8uaycGJNuOEQRN74Rq3HMCQLNpqmKFT37bAZprzC"
+      );
+      req.send(data ? JSON.stringify(data) : localStorage.getItem('inv'));
+    }
+  }, []);
+  
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
     if (loadedInv) {
       setInvData(JSON.parse(loadedInv));
+      remoteSync(JSON.parse(loadedInv));
     }
-  }, []);
+  }, [remoteSync]);
 
   useEffect(() => {
     document.onkeyup = (e: any) => {
@@ -158,7 +200,7 @@ const App = () => {
 
     if (inputString === "DELETE CAT") {
       // secret command
-      setRemoveInfo({cat: editCat, tier: 0, name: "", uid: 0});
+      setRemoveInfo({ cat: editCat, tier: 0, name: "", uid: 0 });
       e.preventDefault();
       return;
     }
@@ -237,7 +279,7 @@ const App = () => {
     if (!removeInfo?.cat) return;
     if (!removeInfo.tier && removeInfo.cat) {
       // removing whole cat
-      const copy = {...invData};
+      const copy = { ...invData };
       delete copy[removeInfo.cat];
       setInvData(copy);
       setRemoveInfo(null);
@@ -389,86 +431,88 @@ const App = () => {
           />
         </div>
       ) : (
-        Object.keys(invData).sort().map(cat => {
-          return (
-            <div key={cat} className='cat'>
-              <div className='cat-header'>
-                <b>{cat}</b>
-                <span
-                  className='abs-right-button'
-                  title='Add a new card'
-                  data-cat={cat}
-                  onClick={addNewCard}
-                >
-                  +
-                </span>
-              </div>
-              <div className='cat-body'>
-                {editCat === cat && (
-                  <div id='new-card-form'>
-                    <div className='card-format'>
-                      ?
-                      <span className='card-format-info'>
-                        Copy from inv:
-                        <br />
-                        <b>:2star128: - Hawkeye (Kate Bishop) - 2333</b>
-                        <br />
-                        or manually insert
-                        <br />
-                        <b>2s Hawkeye (Kate Bishop) 2333</b>
-                      </span>
-                    </div>
-                    <input
-                      id='new-card-input-box'
-                      className='new-card-input-box'
-                      type='text'
-                      autoFocus
-                      value={inputCardValue}
-                      onChange={handleInputChange}
-                      onKeyUp={handleInputKeyUp}
-                      placeholder='2s Hawkeye (Kate Bishop) 2333'
-                    />
-                    <input
-                      type='button'
-                      id='new-card-input-submit-button'
-                      value='✓'
-                      onClick={handleNewCardSubmit}
-                    />
-                  </div>
-                )}
-                <div className='hide-overflow'>
-                  {(invData[cat] as ICard[]).map((card, i) => (
-                    <Fragment key={card.uid}>
-                      {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
-                      <div
-                        className={"card-line star" + card.tier}
-                        id={card.uid + ""}
-                      >
-                        <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
-                        <span
-                          className='edit-card-button unselectable'
-                          data-cat={cat}
-                          data-uid={card.uid}
-                          onClick={editCard}
-                        >
-                          <b>&#9998;</b>
-                        </span>
-                        <span
-                          className='delete-card-button unselectable'
-                          data-cat={cat}
-                          data-uid={card.uid}
-                          onClick={removeCard}
-                        >
-                          <b>&times;</b>
+        Object.keys(invData)
+          .sort()
+          .map(cat => {
+            return (
+              <div key={cat} className='cat'>
+                <div className='cat-header'>
+                  <b>{cat}</b>
+                  <span
+                    className='abs-right-button'
+                    title='Add a new card'
+                    data-cat={cat}
+                    onClick={addNewCard}
+                  >
+                    +
+                  </span>
+                </div>
+                <div className='cat-body'>
+                  {editCat === cat && (
+                    <div id='new-card-form'>
+                      <div className='card-format'>
+                        ?
+                        <span className='card-format-info'>
+                          Copy from inv:
+                          <br />
+                          <b>:2star128: - Hawkeye (Kate Bishop) - 2333</b>
+                          <br />
+                          or manually insert
+                          <br />
+                          <b>2s Hawkeye (Kate Bishop) 2333</b>
                         </span>
                       </div>
-                    </Fragment>
-                  ))}
+                      <input
+                        id='new-card-input-box'
+                        className='new-card-input-box'
+                        type='text'
+                        autoFocus
+                        value={inputCardValue}
+                        onChange={handleInputChange}
+                        onKeyUp={handleInputKeyUp}
+                        placeholder='2s Hawkeye (Kate Bishop) 2333'
+                      />
+                      <input
+                        type='button'
+                        id='new-card-input-submit-button'
+                        value='✓'
+                        onClick={handleNewCardSubmit}
+                      />
+                    </div>
+                  )}
+                  <div className='hide-overflow'>
+                    {(invData[cat] as ICard[]).map((card, i) => (
+                      <Fragment key={card.uid}>
+                        {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
+                        <div
+                          className={"card-line star" + card.tier}
+                          id={card.uid + ""}
+                        >
+                          <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
+                          <span
+                            className='edit-card-button unselectable'
+                            data-cat={cat}
+                            data-uid={card.uid}
+                            onClick={editCard}
+                          >
+                            <b>&#9998;</b>
+                          </span>
+                          <span
+                            className='delete-card-button unselectable'
+                            data-cat={cat}
+                            data-uid={card.uid}
+                            onClick={removeCard}
+                          >
+                            <b>&times;</b>
+                          </span>
+                        </div>
+                      </Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })
+            );
+          })
       )}
       <a
         id='downloadJSON'
@@ -488,7 +532,11 @@ const App = () => {
             <Alert variant='danger'>
               Are you sure you want to remove this?
               <br />
-              <b>{removeInfo.tier ? `${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}` : `Category: ${removeInfo.cat}`}</b>
+              <b>
+                {removeInfo.tier
+                  ? `${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}`
+                  : `Category: ${removeInfo.cat}`}
+              </b>
             </Alert>
           </Modal.Body>
           <Modal.Footer>
@@ -530,7 +578,11 @@ const App = () => {
         <Modal show>
           <Modal.Header closeButton>New sub category</Modal.Header>
           <Modal.Body>
-            <Form.Control id='new-subcat-input' placeholder="Marvel Cinematic Universe" autoFocus/>
+            <Form.Control
+              id='new-subcat-input'
+              placeholder='Marvel Cinematic Universe'
+              autoFocus
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant='primary' onClick={addSub}>
