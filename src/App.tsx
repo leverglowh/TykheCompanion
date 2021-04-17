@@ -5,6 +5,7 @@ import { ICard } from "./model/card.model";
 import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
+import Form from 'react-bootstrap/Form';
 
 const App = () => {
   const [invData, setInvData] = useState<any>(null);
@@ -19,6 +20,7 @@ const App = () => {
   } | null>(null);
   const [errorLog, setErrorLog] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
+  const [createNewCat, setCreateNewCat] = useState(false);
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
     if (loadedInv) {
@@ -147,6 +149,20 @@ const App = () => {
       return;
     }
 
+    if (inputString === "CREATE CAT") {
+      // secret command
+      setCreateNewCat(true);
+      e.preventDefault();
+      return;
+    }
+
+    if (inputString === "DELETE CAT") {
+      // secret command
+      setRemoveInfo({cat: editCat, tier: 0, name: "", uid: 0});
+      e.preventDefault();
+      return;
+    }
+
     // Sanity check
     if (!CARD_INPUT_REGEX.test(inputString)) {
       alert("Non valid input, abort! abort!");
@@ -218,8 +234,16 @@ const App = () => {
   };
 
   const confirmRemove = () => {
-    if (!removeInfo?.cat || !removeInfo?.uid) return;
-
+    if (!removeInfo?.cat) return;
+    if (!removeInfo.tier && removeInfo.cat) {
+      // removing whole cat
+      const copy = {...invData};
+      delete copy[removeInfo.cat];
+      setInvData(copy);
+      setRemoveInfo(null);
+      return;
+    }
+    if (!removeInfo.uid) return;
     setInvData({
       ...invData,
       [removeInfo.cat]: [
@@ -285,7 +309,7 @@ const App = () => {
                 ...parsedCard,
               });
             }
-          } else { // line doesn't start with 
+          } else {
             // cat or line break
             if (line.length > 1) {
               // is sub cat line
@@ -301,7 +325,7 @@ const App = () => {
 
         // now inv should be complete
         const sortedInv: any = {};
-        const keys = [...Object.keys(built_inv)].sort();
+        const keys = [...Object.keys(built_inv)];
         keys.forEach(k => {
           if (built_inv[k].length === 0) {
             delete built_inv[k];
@@ -329,6 +353,25 @@ const App = () => {
   const closeImportResultModal = () => {
     window.location.reload();
   };
+
+  const addSub = () => {
+    const cat = (document.getElementById(
+      "new-subcat-input"
+    ) as HTMLInputElement).value;
+    if (!cat) {
+      alert("Invalid category name");
+      return;
+    } else {
+      setInvData({
+        ...invData,
+        [cat]: [],
+      });
+      setCreateNewCat(false);
+      setEditCat("");
+      setEditUid(0);
+      setInputCardValue("");
+    }
+  };
   return (
     <div className='main-container'>
       {!invData ? (
@@ -346,7 +389,7 @@ const App = () => {
           />
         </div>
       ) : (
-        Object.keys(invData).map(cat => {
+        Object.keys(invData).sort().map(cat => {
           return (
             <div key={cat} className='cat'>
               <div className='cat-header'>
@@ -443,9 +486,9 @@ const App = () => {
           <Modal.Header>Are you sure?</Modal.Header>
           <Modal.Body>
             <Alert variant='danger'>
-              Are you sure you want to remove this card?
+              Are you sure you want to remove this?
               <br />
-              <b>{`${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}`}</b>
+              <b>{removeInfo.tier ? `${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}` : `Category: ${removeInfo.cat}`}</b>
             </Alert>
           </Modal.Body>
           <Modal.Footer>
@@ -467,13 +510,31 @@ const App = () => {
             </Alert>
             <div className='import-error-log-container'>
               {errorLog.map((l, i) => (
-                <div><span className="error-log-index unselectable">{i+1}&nbsp;</span>{l}</div>
+                <div>
+                  <span className='error-log-index unselectable'>
+                    {i + 1}&nbsp;
+                  </span>
+                  {l}
+                </div>
               ))}
             </div>
           </Modal.Body>
           <Modal.Footer>
             <Button variant='secondary' onClick={closeImportResultModal}>
               OK
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+      {createNewCat && (
+        <Modal show>
+          <Modal.Header closeButton>New sub category</Modal.Header>
+          <Modal.Body>
+            <Form.Control id='new-subcat-input' placeholder="Marvel Cinematic Universe" autoFocus/>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant='primary' onClick={addSub}>
+              ADD
             </Button>
           </Modal.Footer>
         </Modal>

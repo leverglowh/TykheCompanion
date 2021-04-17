@@ -10,7 +10,7 @@
   text-align: center;
 }
 
-input {
+#new-card-input-box {
   font-family: system-ui !important;
   margin: 2px !important;
   font-size: 11px !important;
