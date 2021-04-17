@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/TykheCompanion/static/css/main.809c6830.chunk.css",
-    "main.js": "/TykheCompanion/static/js/main.39d5d1c8.chunk.js",
-    "main.js.map": "/TykheCompanion/static/js/main.39d5d1c8.chunk.js.map",
-    "runtime-main.js": "/TykheCompanion/static/js/runtime-main.4bac35bd.js",
-    "runtime-main.js.map": "/TykheCompanion/static/js/runtime-main.4bac35bd.js.map",
+    "main.css": "/TykheCompanion/static/css/main.85948106.chunk.css",
+    "main.js": "/TykheCompanion/static/js/main.cd1bd9ba.chunk.js",
+    "main.js.map": "/TykheCompanion/static/js/main.cd1bd9ba.chunk.js.map",
+    "runtime-main.js": "/TykheCompanion/static/js/runtime-main.7099fdc4.js",
+    "runtime-main.js.map": "/TykheCompanion/static/js/runtime-main.7099fdc4.js.map",
     "static/css/2.4c97ca4f.chunk.css": "/TykheCompanion/static/css/2.4c97ca4f.chunk.css",
-    "static/js/2.3dfc342b.chunk.js": "/TykheCompanion/static/js/2.3dfc342b.chunk.js",
-    "static/js/2.3dfc342b.chunk.js.map": "/TykheCompanion/static/js/2.3dfc342b.chunk.js.map",
-    "static/js/3.feaa9d12.chunk.js": "/TykheCompanion/static/js/3.feaa9d12.chunk.js",
-    "static/js/3.feaa9d12.chunk.js.map": "/TykheCompanion/static/js/3.feaa9d12.chunk.js.map",
+    "static/js/2.71c2afc0.chunk.js": "/TykheCompanion/static/js/2.71c2afc0.chunk.js",
+    "static/js/2.71c2afc0.chunk.js.map": "/TykheCompanion/static/js/2.71c2afc0.chunk.js.map",
+    "static/js/3.5250854f.chunk.js": "/TykheCompanion/static/js/3.5250854f.chunk.js",
+    "static/js/3.5250854f.chunk.js.map": "/TykheCompanion/static/js/3.5250854f.chunk.js.map",
     "index.html": "/TykheCompanion/index.html",
     "static/css/2.4c97ca4f.chunk.css.map": "/TykheCompanion/static/css/2.4c97ca4f.chunk.css.map",
-    "static/css/main.809c6830.chunk.css.map": "/TykheCompanion/static/css/main.809c6830.chunk.css.map",
-    "static/js/2.3dfc342b.chunk.js.LICENSE.txt": "/TykheCompanion/static/js/2.3dfc342b.chunk.js.LICENSE.txt"
+    "static/css/main.85948106.chunk.css.map": "/TykheCompanion/static/css/main.85948106.chunk.css.map",
+    "static/js/2.71c2afc0.chunk.js.LICENSE.txt": "/TykheCompanion/static/js/2.71c2afc0.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.4bac35bd.js",
+    "static/js/runtime-main.7099fdc4.js",
     "static/css/2.4c97ca4f.chunk.css",
-    "static/js/2.3dfc342b.chunk.js",
-    "static/css/main.809c6830.chunk.css",
-    "static/js/main.39d5d1c8.chunk.js"
+    "static/js/2.71c2afc0.chunk.js",
+    "static/css/main.85948106.chunk.css",
+    "static/js/main.cd1bd9ba.chunk.js"
   ]
 }
