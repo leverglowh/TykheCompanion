@@ -306,16 +306,11 @@ const App = () => {
         .getElementById(editUid + "")
         ?.style.removeProperty("text-decoration");
     } else {
-      Object.keys(invData).forEach(cat => {
-        const isDuplicate = !!(invData[cat] as ICard[]).find(
-          c => c.uid === parsedCard?.uid
-        );
-        if (isDuplicate) {
-          alert("Duplicate UID, please check your data.");
-          // eslint-disable-next-line no-throw-literal
-          throw "Duplicate UID, please check your data.";
-        }
-      });
+      const isDuplicate = Object.keys(invData).some(cat => (invData[cat] as ICard[]).some(card => card.uid === parsedCard?.uid));
+      if (isDuplicate) {
+        alert("Duplicate UID, please check your data.");
+        return;
+      }
 
       setInvData({
         ...invData,
