@@ -1,5 +1,6 @@
-.container {
+.main-container {
   display: flex;
+  line-height: normal !important;
 }
 
 .file-input-container {
@@ -9,8 +10,31 @@
   text-align: center;
 }
 
+input {
+  font-family: system-ui !important;
+  margin: 2px !important;
+  font-size: 11px !important;
+}
+
+hr {
+  margin: 8px 0 !important;
+}
+
 .margin-top-50 {
   margin-top: 20%;
+}
+
+.import-error-log-container {
+  max-height: 150px;
+  overflow-y: auto;
+  border-radius: 0.25rem;
+  background-color: #d2d2d2;
+  padding: 12px 20px;
+}
+
+.error-log-index {
+  color: #999999;
+  
 }
 
 .cat {
@@ -47,7 +71,7 @@
   max-height: 86vh;
 }
 
-.card {
+.card-line {
   position: relative;
   padding-right: 30px;
 }
@@ -68,7 +92,7 @@
   right: 2px;
 }
 
-.card:hover .delete-card-button {
+.card-line:hover .delete-card-button {
   visibility: visible;
 }
 

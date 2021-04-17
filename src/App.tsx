@@ -2,13 +2,23 @@ import React, { Fragment, useEffect, useState } from "react";
 import "./App.css";
 import { cardSort, CARD_INPUT_REGEX } from "./utils/general-utils";
 import { ICard } from "./model/card.model";
+import Modal from "react-bootstrap/Modal";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
 
 const App = () => {
   const [invData, setInvData] = useState<any>(null);
   const [editCat, setEditCat] = useState("");
   const [editUid, setEditUid] = useState(0);
   const [inputCardValue, setInputCardValue] = useState("");
+  const [removeInfo, setRemoveInfo] = useState<{
+    cat: string;
+    tier: number;
+    name: string;
+    uid: number;
+  } | null>(null);
   const [errorLog, setErrorLog] = useState<string[]>([]);
+  const [showResult, setShowResult] = useState(false);
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
     if (loadedInv) {
@@ -73,6 +83,8 @@ const App = () => {
     let name = "";
     if (line?.[0] === ":") {
       // copied from inv
+      if (!/^:[0-5]star128:/.test(line)) return null;
+
       tier = Number(line[1]);
       const temp_vals = [
         ...line.split("-").map((word: string) => word.trim()),
@@ -80,13 +92,16 @@ const App = () => {
       uid = Number(temp_vals[temp_vals.length - 1]);
       name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
     } else {
+      if (!/^[1-5][^0-9]+/.test(line)) return null;
       let temp_vals = [];
 
       temp_vals = [
         ...line.split("-").map((word: string) => word.trim()),
       ].filter(w => w.length > 0);
 
-      tier = Number(line[0]);
+      const numberPattern = /\d+/g;
+
+      tier = Number(temp_vals[0].match(numberPattern)?.[0]) || 0;
       uid = Number(temp_vals[temp_vals.length - 1]);
       name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
 
@@ -191,11 +206,26 @@ const App = () => {
     const cat = e.target?.dataset?.cat;
     const uid = Number(e.target?.dataset?.uid);
     if (!cat || !uid) return;
+    const toBeRemoved = invData[cat].find((c: any) => c.uid === uid);
+    setRemoveInfo({ cat, ...toBeRemoved });
+  };
+
+  const confirmRemove = () => {
+    if (!removeInfo?.cat || !removeInfo?.uid) return;
 
     setInvData({
       ...invData,
-      [cat]: [...invData[cat].filter((c: ICard) => c.uid !== uid)],
+      [removeInfo.cat]: [
+        ...invData[removeInfo.cat].filter(
+          (c: ICard) => c.uid !== removeInfo.uid
+        ),
+      ],
     });
+    setRemoveInfo(null);
+  };
+
+  const abortRemove = () => {
+    setRemoveInfo(null);
   };
 
   const editCard = (e: any) => {
@@ -233,21 +263,22 @@ const App = () => {
         let last_cat = "";
         const lines = removed_locks.split("\n");
         let invalidCounter = 0;
+        const tempLog: string[] = [];
         lines.forEach(line => {
-          if (line.startsWith(":") || /^[1-5][^0-9]+/.test(line)) {
-            // is inv item line
+          if (line.startsWith(":") || /^[0-9]/.test(line)) {
+            // starts with : or number -> is inv item line
             const parsedCard = parseCard(line.trim());
 
             if (!last_cat || !parsedCard) {
               invalidCounter++;
-              setErrorLog([...errorLog, line]);
+              tempLog.push(line);
               return;
             } else {
               built_inv[last_cat].push({
                 ...parsedCard,
               });
             }
-          } else {
+          } else { // line doesn't start with 
             // cat or line break
             if (line.length > 1) {
               // is sub cat line
@@ -260,24 +291,37 @@ const App = () => {
             }
           }
         });
-        invalidCounter > 0 && alert(`Found ${invalidCounter} errors in file.`);
+
         // now inv should be complete
         const sortedInv: any = {};
         const keys = [...Object.keys(built_inv)].sort();
         keys.forEach(k => {
+          if (built_inv[k].length === 0) {
+            delete built_inv[k];
+            tempLog.push(k);
+            return;
+          }
           sortedInv[k] = built_inv[k].sort(cardSort);
         });
 
         localStorage.setItem("inv", JSON.stringify(sortedInv));
-        window.location.reload();
+
+        if (invalidCounter > 0) {
+          setErrorLog(tempLog);
+          setShowResult(true);
+        }
       };
       reader.onerror = function (evt) {
         alert("error");
       };
     }
   };
+
+  const closeImportResultModal = () => {
+    window.location.reload();
+  };
   return (
-    <div className='container'>
+    <div className='main-container'>
       {!invData ? (
         <div className='file-input-container'>
           <label htmlFor='initial-inv-input'>
@@ -345,7 +389,7 @@ const App = () => {
                     <Fragment key={card.uid}>
                       {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
                       <div
-                        className={"card star" + card.tier}
+                        className={"card-line star" + card.tier}
                         id={card.uid + ""}
                       >
                         <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
@@ -385,6 +429,46 @@ const App = () => {
       >
         DOWNLOAD JSON
       </a>
+      {removeInfo && (
+        <Modal show backdrop='static' keyboard={false}>
+          <Modal.Header>Are you sure?</Modal.Header>
+          <Modal.Body>
+            <Alert variant='danger'>
+              Are you sure you want to remove this card?
+              <br />
+              <b>{`${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}`}</b>
+            </Alert>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant='secondary' onClick={abortRemove}>
+              Don't remove
+            </Button>
+            <Button variant='danger' onClick={confirmRemove}>
+              Yes, do it.
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+      {showResult && errorLog.length > 0 && (
+        <Modal show backdrop='static' keyboard={false}>
+          <Modal.Header>Error encountered</Modal.Header>
+          <Modal.Body>
+            <Alert variant='danger'>
+              {errorLog.length} error(s) encountered in these lines:
+            </Alert>
+            <div className='import-error-log-container'>
+              {errorLog.map((l, i) => (
+                <div><span className="error-log-index unselectable">{i+1}&nbsp;</span>{l}</div>
+              ))}
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant='secondary' onClick={closeImportResultModal}>
+              OK
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
     </div>
   );
 };
