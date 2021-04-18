@@ -36,7 +36,10 @@ const App = () => {
 
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
-          localStorage.setItem("binId", JSON.parse(req.response).metadata.id);
+          const binId = JSON.parse(req.response).metadata.id;
+          if (!binId) return;
+
+          localStorage.setItem("binId", binId);
           localStorage.setItem("last-fetch", new Date().valueOf() + "");
           alert(
             "Save this id so you can restore your inv in future: " +
@@ -163,7 +166,8 @@ const App = () => {
   useEffect(() => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
-    remoteSync(invData);
+    const binId = localStorage.getItem('binId');
+    binId && remoteSync(invData);
   }, [invData, remoteSync]);
 
   const updateInvData = (newInv: any) => {
@@ -273,16 +277,23 @@ const App = () => {
         // now inv should be complete
         const sortedInv: any = {};
         const keys = [...Object.keys(built_inv)];
-        keys.forEach(k => {
-          if (built_inv[k].length === 0) {
-            delete built_inv[k];
-            tempLog.push(k);
-            return;
-          }
-          sortedInv[k] = built_inv[k].sort(cardSort);
-        });
 
-        localStorage.setItem("inv", JSON.stringify(sortedInv));
+        if (keys.length === 0) {
+          // Empty obj
+          invalidCounter ++;
+          tempLog.push("No lines found.");
+        } else {
+          keys.forEach(k => {
+            if (built_inv[k].length === 0) {
+              delete built_inv[k];
+              tempLog.push(k);
+              return;
+            }
+            sortedInv[k] = built_inv[k].sort(cardSort);
+          });
+  
+          localStorage.setItem("inv", JSON.stringify(sortedInv));
+        }
 
         if (invalidCounter > 0) {
           setErrorLog(tempLog);
