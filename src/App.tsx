@@ -1,17 +1,23 @@
-import React, { Fragment, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
-import { cardSort, CARD_INPUT_REGEX } from "./utils/general-utils";
+import {
+  cardSort,
+  dataCheck,
+  fireSubmitOnEnter,
+  parseCard,
+} from "./utils/general-utils";
 import { ICard } from "./model/card.model";
 import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import SubCategoryCard from "components/sub-category-card";
 
 const App = () => {
   const [invData, setInvData] = useState<any>(null);
-  const [editCat, setEditCat] = useState("");
-  const [editUid, setEditUid] = useState(0);
-  const [inputCardValue, setInputCardValue] = useState("");
+  const [editingCategory, setEditingCategory] = useState("");
+  const [editingUID, setEditingUID] = useState(0);
+
   const [removeInfo, setRemoveInfo] = useState<{
     cat: string;
     tier: number;
@@ -20,7 +26,7 @@ const App = () => {
   } | null>(null);
   const [errorLog, setErrorLog] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
-  const [createNewCat, setCreateNewCat] = useState(false);
+  const [isCreatingNewCat, setCreatingNewCat] = useState(false);
 
   const remoteSync = useCallback((data?: any) => {
     const binId = localStorage.getItem("binId");
@@ -51,7 +57,9 @@ const App = () => {
 
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
-          console.log(JSON.parse(req.response).metadata ? 'Sync success' : 'Sync error');
+          console.log(
+            JSON.parse(req.response).metadata ? "Sync success" : "Sync error"
+          );
         }
       };
 
@@ -84,7 +92,7 @@ const App = () => {
         const cats = Object.keys(inv);
         const isValid = cats.every(
           cat =>
-          Array.isArray(inv[cat]) &&
+            Array.isArray(inv[cat]) &&
             inv[cat].every((card: any) =>
               dataCheck(card.tier, card.name, card.uid)
             )
@@ -126,20 +134,37 @@ const App = () => {
   useEffect(() => {
     document.onkeyup = (e: any) => {
       if (e.key === "Escape") {
-        setEditCat("");
-        setInputCardValue("");
         document
-          .getElementById(editUid + "")
+          .getElementById(editingUID + "")
           ?.style.setProperty("text-decoration", "none");
-        setEditUid(0);
+        setEditingUID(0);
       }
     };
-  }, [editUid]);
+  }, [editingUID]);
 
   useEffect(() => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
   }, [invData]);
+
+  const updateInvData = (newInv: any) => {
+    if (newInv) {
+      setInvData(newInv);
+    }
+  };
+
+  const updateEditingCategory = (cat: string) => {
+    setEditingCategory(cat);
+  };
+  const updateEditingUID = (uid: number) => {
+    setEditingUID(uid);
+  };
+  const updateCreatingNewCat = (isCreating: boolean) => {
+    setCreatingNewCat(isCreating);
+  };
+  const updateRemoveInfo = (info: any) => {
+    setRemoveInfo(info);
+  };
 
   const handleBackupIdInput = (e: any) => {
     const id: string = (document.getElementById(
@@ -153,188 +178,6 @@ const App = () => {
       return;
     }
     fetchDataFromJsonBin(id);
-  };
-
-  const dataCheck = (tier: number, name: string, uid: number) => {
-    const uidString = uid + "";
-    return !(
-      !tier ||
-      !name ||
-      !uid ||
-      tier > 5 ||
-      tier < 1 ||
-      name.length <= 0 ||
-      uidString.includes(".") ||
-      uidString.includes(",") ||
-      uidString.length !== 4 ||
-      uid < 1000
-    );
-  };
-
-  const handleInputChange = (e: any) => {
-    setInputCardValue(e.target.value);
-  };
-
-  const handleInputKeyUp = (e: any, elementId: string) => {
-    if (e.key === "Enter") {
-      document.getElementById(elementId)?.click();
-    }
-  };
-
-  const addNewCard = (e: any) => {
-    e.persist();
-    const cat = e.target?.dataset?.cat;
-    setEditCat(cat);
-    setInputCardValue("");
-  };
-
-  const parseCard = (line: string) => {
-    let tier = 0;
-    let uid = 0;
-    let name = "";
-    if (line?.[0] === ":") {
-      // copied from inv
-      if (!/^:[0-5]star128:/.test(line)) return null;
-
-      tier = Number(line[1]);
-      const temp_vals = [
-        ...line.split("-").map((word: string) => word.trim()),
-      ].filter(w => w.length > 0); // remove empty words
-      uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-    } else {
-      if (!/^[1-5][^0-9]+/.test(line)) return null;
-      let temp_vals = [];
-
-      temp_vals = [
-        ...line.split("-").map((word: string) => word.trim()),
-      ].filter(w => w.length > 0);
-
-      const numberPattern = /\d+/g;
-
-      tier = Number(temp_vals[0].match(numberPattern)?.[0]) || 0;
-      uid = Number(temp_vals[temp_vals.length - 1]);
-      name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
-
-      if (!dataCheck(tier, name, uid)) {
-        // retry with space as split string
-        temp_vals = [
-          ...line.split(" ").map((word: string) => word.trim()),
-        ].filter(w => w.length > 0);
-
-        tier = Number(line[0]);
-        uid = Number(temp_vals[temp_vals.length - 1]);
-        name = temp_vals.slice(1, temp_vals.length - 1).join(" ");
-      }
-    }
-
-    // sanity check
-    if (!dataCheck(tier, name, uid)) {
-      return null;
-    }
-
-    return { tier, name, uid };
-  };
-
-  const handleNewCardSubmit = (e: any) => {
-    const inputString: string = (inputCardValue || "")
-      .replace(":lock:", "")
-      .trim();
-
-    if (inputString === "JSON") {
-      // secret command
-      document.getElementById("downloadJSON")?.click();
-      setEditCat("");
-      setEditUid(0);
-      setInputCardValue("");
-      e.preventDefault();
-      return;
-    }
-
-    if (inputString === "CLEAR") {
-      // secret command
-      localStorage.clear();
-      window.location.reload();
-      return;
-    }
-
-    if (inputString === "CREATE CAT") {
-      // secret command
-      setCreateNewCat(true);
-      e.preventDefault();
-      return;
-    }
-
-    if (inputString === "DELETE CAT") {
-      // secret command
-      setRemoveInfo({ cat: editCat, tier: 0, name: "", uid: 0 });
-      e.preventDefault();
-      return;
-    }
-
-    // Sanity check
-    if (!CARD_INPUT_REGEX.test(inputString)) {
-      alert("Non valid input, abort! abort!");
-      return;
-    }
-
-    const parsedCard = parseCard(inputString);
-
-    if (!parsedCard) {
-      alert("Non valid input, abort! abort!");
-      return;
-    }
-
-    if (editUid) {
-      // edit existing
-      const card = (invData[editCat] as ICard[]).find(c => c.uid === editUid);
-      // if (!card) BOH
-      if (parsedCard?.name !== card?.name) {
-        alert(
-          "Attention: you input a different card name, the old card will be replaced."
-        );
-      }
-      setInvData({
-        ...invData,
-        [editCat]: [
-          ...invData[editCat].filter((c: ICard) => c.uid !== editUid),
-          { ...parsedCard },
-        ].sort(cardSort),
-      });
-
-      document
-        .getElementById(editUid + "")
-        ?.style.removeProperty("text-decoration");
-    } else {
-      const isDuplicate = Object.keys(invData).some(cat => (invData[cat] as ICard[]).some(card => card.uid === parsedCard?.uid));
-      if (isDuplicate) {
-        alert("Duplicate UID, please check your data.");
-        return;
-      }
-
-      setInvData({
-        ...invData,
-        [editCat]: [...invData[editCat], { ...parsedCard }].sort(cardSort),
-      });
-    }
-
-    setEditCat("");
-    setEditUid(0);
-    setInputCardValue("");
-    e.preventDefault();
-  };
-
-  const removeCard = (e: any) => {
-    e.persist();
-    if (e.target.tagName === "B") {
-      e.target.parentElement.click();
-      return;
-    }
-    const cat = e.target?.dataset?.cat;
-    const uid = Number(e.target?.dataset?.uid);
-    if (!cat || !uid) return;
-    const toBeRemoved = invData[cat].find((c: any) => c.uid === uid);
-    setRemoveInfo({ cat, ...toBeRemoved });
   };
 
   const confirmRemove = () => {
@@ -361,24 +204,6 @@ const App = () => {
 
   const abortRemove = () => {
     setRemoveInfo(null);
-  };
-
-  const editCard = (e: any) => {
-    e.persist();
-    if (e.target.tagName === "B") {
-      e.target.parentElement.click();
-      return;
-    }
-    const cat = e.target?.dataset?.cat;
-    const uid = Number(e.target?.dataset?.uid);
-    if (!cat || !uid) return;
-
-    const old = document.getElementById(uid + "");
-
-    old?.style.setProperty("text-decoration", "line-through");
-    setEditCat(cat);
-    setEditUid(uid);
-    setInputCardValue(old?.firstElementChild?.innerHTML || "");
   };
 
   const handleInvInput = (event: any) => {
@@ -469,10 +294,9 @@ const App = () => {
         ...invData,
         [cat]: [],
       });
-      setCreateNewCat(false);
-      setEditCat("");
-      setEditUid(0);
-      setInputCardValue("");
+      setCreatingNewCat(false);
+      setEditingCategory("");
+      setEditingUID(0);
     }
   };
   return (
@@ -499,7 +323,7 @@ const App = () => {
                 placeholder='607b400f0ed6f819beae5284'
                 id='backup-id-input'
                 onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                  handleInputKeyUp(e, "backup-id-input-button")
+                  fireSubmitOnEnter(e, "backup-id-input-button")
                 }
               />
               &nbsp;
@@ -514,84 +338,18 @@ const App = () => {
           .sort()
           .map(cat => {
             return (
-              <div key={cat} className='cat'>
-                <div className='cat-header'>
-                  <b>{cat}</b>
-                  <span
-                    className='abs-right-button'
-                    title='Add a new card'
-                    data-cat={cat}
-                    onClick={addNewCard}
-                  >
-                    +
-                  </span>
-                </div>
-                <div className='cat-body'>
-                  {editCat === cat && (
-                    <div id='new-card-form'>
-                      <div className='card-format'>
-                        ?
-                        <span className='card-format-info'>
-                          Copy from inv:
-                          <br />
-                          <b>:2star128: - Hawkeye (Kate Bishop) - 2333</b>
-                          <br />
-                          or manually insert
-                          <br />
-                          <b>2s Hawkeye (Kate Bishop) 2333</b>
-                        </span>
-                      </div>
-                      <input
-                        id='new-card-input-box'
-                        className='new-card-input-box'
-                        type='text'
-                        autoFocus
-                        value={inputCardValue}
-                        onChange={handleInputChange}
-                        onKeyUp={e =>
-                          handleInputKeyUp(e, "new-card-input-submit-button")
-                        }
-                        placeholder='2s Hawkeye (Kate Bishop) 2333'
-                      />
-                      <input
-                        type='button'
-                        id='new-card-input-submit-button'
-                        value='✓'
-                        onClick={handleNewCardSubmit}
-                      />
-                    </div>
-                  )}
-                  <div className='hide-overflow'>
-                    {(invData[cat] as ICard[]).map((card, i) => (
-                      <Fragment key={card.uid}>
-                        {invData[cat]?.[i - 1]?.name !== card.name && <hr />}
-                        <div
-                          className={"card-line star" + card.tier}
-                          id={card.uid + ""}
-                        >
-                          <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
-                          <span
-                            className='edit-card-button unselectable'
-                            data-cat={cat}
-                            data-uid={card.uid}
-                            onClick={editCard}
-                          >
-                            <b>&#9998;</b>
-                          </span>
-                          <span
-                            className='delete-card-button unselectable'
-                            data-cat={cat}
-                            data-uid={card.uid}
-                            onClick={removeCard}
-                          >
-                            <b>&times;</b>
-                          </span>
-                        </div>
-                      </Fragment>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <SubCategoryCard
+                key={cat}
+                category={cat}
+                invData={invData}
+                editingCategory={editingCategory}
+                editingUID={editingUID}
+                updateInvData={updateInvData}
+                updateRemoveInfo={updateRemoveInfo}
+                updateEditingUID={updateEditingUID}
+                updateCreatingNewCat={updateCreatingNewCat}
+                updateEditingCategory={updateEditingCategory}
+              />
             );
           })
       )}
@@ -655,7 +413,7 @@ const App = () => {
           </Modal.Footer>
         </Modal>
       )}
-      {createNewCat && (
+      {isCreatingNewCat && (
         <Modal show>
           <Modal.Header closeButton>New sub category</Modal.Header>
           <Modal.Body>
@@ -664,7 +422,7 @@ const App = () => {
               placeholder='Marvel Cinematic Universe'
               autoFocus
               onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                handleInputKeyUp(e, "new-subcat-input-button")
+                fireSubmitOnEnter(e, "new-subcat-input-button")
               }
             />
           </Modal.Body>
