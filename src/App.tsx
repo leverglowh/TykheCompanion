@@ -37,6 +37,7 @@ const App = () => {
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
           localStorage.setItem("binId", JSON.parse(req.response).metadata.id);
+          localStorage.setItem("last-fetch", new Date().valueOf() + "");
           alert(
             "Save this id so you can restore your inv in future: " +
               JSON.parse(req.response).metadata.id
@@ -47,6 +48,7 @@ const App = () => {
       req.open("POST", "https://api.jsonbin.io/v3/b", true);
       req.setRequestHeader("Content-Type", "application/json");
       req.setRequestHeader("X-BIN-PRIVATE", "false");
+      req.setRequestHeader("X-Bin-Versioning", "false");
       req.setRequestHeader(
         "X-Master-Key",
         "$2b$10$ckVgM1xPqSGsv8uaycGJNuOEQRN74Rq3HMCQLNpqmKFT37bAZprzC"
@@ -57,6 +59,7 @@ const App = () => {
 
       req.onreadystatechange = () => {
         if (req.readyState === XMLHttpRequest.DONE) {
+          localStorage.setItem("last-fetch", new Date().valueOf() + "");
           console.log(
             JSON.parse(req.response).metadata ? "Sync success" : "Sync error"
           );
@@ -98,8 +101,17 @@ const App = () => {
             )
         );
         if (isValid) {
-          localStorage.setItem("inv", JSON.stringify(inv));
-          localStorage.setItem("binId", binId);
+          const localData = localStorage.getItem("inv");
+          if (!localData) {
+            // no local, only remote
+            localStorage.setItem("inv", JSON.stringify(inv));
+          } else if (JSON.stringify(inv) !== localData) {
+            // remote !== local
+            alert("Discrepancy remote vs local, keeping remote for now.");
+            localStorage.setItem("inv", JSON.stringify(inv));
+          }
+          localStorage.setItem("last-fetch", new Date().valueOf() + "");
+          localStorage.setItem('binId', binId);
           window.location.reload();
         } else {
           alert(
@@ -121,13 +133,19 @@ const App = () => {
   useEffect(() => {
     const loadedInv = localStorage.getItem("inv");
     const binId = localStorage.getItem("binId");
-    if (loadedInv) {
-      setInvData(JSON.parse(loadedInv));
-      remoteSync(JSON.parse(loadedInv));
-    } else {
-      if (binId) {
-        fetchDataFromJsonBin(binId);
-      }
+    const lastFetch = Number(localStorage.getItem("last-fetch")) || 0;
+    const isFetchedIn1Min = new Date().valueOf() - lastFetch < 1 * 60 * 1000;
+    const hasLocal = loadedInv !== null;
+    const hasRemote = binId !== null;
+
+    if (hasRemote && isFetchedIn1Min && hasLocal) {
+      setInvData(JSON.parse(loadedInv as string));
+    } else if (hasLocal && !hasRemote) {
+      const loadedData = JSON.parse(loadedInv as string);
+      setInvData(loadedData);
+      remoteSync(loadedData);
+    } else if (hasRemote) {
+      fetchDataFromJsonBin(binId as string);
     }
   }, [remoteSync, fetchDataFromJsonBin]);
 
@@ -145,7 +163,8 @@ const App = () => {
   useEffect(() => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
-  }, [invData]);
+    remoteSync(invData);
+  }, [invData, remoteSync]);
 
   const updateInvData = (newInv: any) => {
     if (newInv) {
