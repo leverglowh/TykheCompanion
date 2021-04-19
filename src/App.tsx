@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import {
-  sortCardByNameAscTierDisc,
+  sortCardByNameAscTierDiscUIDAsc,
   dataCheck,
   fireSubmitOnEnter,
   parseCard,
 } from "./utils/general-utils";
 import { ICard } from "./model/card.model";
+import { Filter } from "utils/constants";
 import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
@@ -15,10 +16,14 @@ import SubCategoryCard from "components/sub-category-card";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import NavDropdown from "react-bootstrap/NavDropdown";
-import { Filter } from "utils/constants";
+import MergeablesModal from "components/mergeables-modal";
+
+export interface IInv {
+  [cat: string]: ICard[];
+}
 
 const App = () => {
-  const [invData, setInvData] = useState<any>(null);
+  const [invData, setInvData] = useState<IInv>();
   const [editingCategory, setEditingCategory] = useState("");
   const [editingUID, setEditingUID] = useState(0);
 
@@ -31,6 +36,7 @@ const App = () => {
   const [errorLog, setErrorLog] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [isCreatingNewCat, setCreatingNewCat] = useState(false);
+  const [showMergeablesModal, setShowMergeablesModal] = useState(false);
 
   const [filter, setFilter] = useState<Filter>(Filter.None);
 
@@ -223,9 +229,9 @@ const App = () => {
     setInvData({
       ...invData,
       [removeInfo.cat]: [
-        ...invData[removeInfo.cat].filter(
+        ...(invData?.[removeInfo.cat]?.filter(
           (c: ICard) => c.uid !== removeInfo.uid
-        ),
+        ) || []),
       ],
     });
     setRemoveInfo(null);
@@ -295,7 +301,7 @@ const App = () => {
               tempLog.push(k);
               return;
             }
-            sortedInv[k] = built_inv[k].sort(sortCardByNameAscTierDisc);
+            sortedInv[k] = built_inv[k].sort(sortCardByNameAscTierDiscUIDAsc);
           });
 
           localStorage.setItem("inv", JSON.stringify(sortedInv));
@@ -346,6 +352,24 @@ const App = () => {
         break;
     }
   };
+
+  const toggleMergeablesModal = () => {
+    setShowMergeablesModal(!showMergeablesModal);
+  };
+
+  const handleMerge = (cat: string, uids: number[]) => {
+    const keptCard = invData?.[cat]?.find(c => c.uid === uids[0]);
+    if (!keptCard) return;
+    const newList = [
+      ...(invData?.[cat]?.filter(c => !uids.includes(c.uid)) || []),
+      { ...keptCard, tier: keptCard.tier + 1 },
+    ].sort(sortCardByNameAscTierDiscUIDAsc);
+    setInvData({
+      ...invData,
+      [cat]: newList,
+    });
+  };
+
   return (
     <>
       {invData && (
@@ -376,6 +400,9 @@ const App = () => {
                 <NavDropdown.Item disabled>1 star (WIP)</NavDropdown.Item>
               </NavDropdown>
             </Nav>
+            <Button variant='outline-warning' onClick={toggleMergeablesModal}>
+              Show mergeables
+            </Button>
             {/* <Form inline>
               <FormControl
                 type='text'
@@ -527,6 +554,13 @@ const App = () => {
               </Button>
             </Modal.Footer>
           </Modal>
+        )}
+        {showMergeablesModal && (
+          <MergeablesModal
+            invData={invData}
+            handleMerge={handleMerge}
+            closeModal={toggleMergeablesModal}
+          />
         )}
       </div>
     </>

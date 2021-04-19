@@ -2,14 +2,14 @@ import { ICard } from "model/card.model";
 
 export const CARD_INPUT_REGEX = /(^:[1-5]star128:\W*-\W*(.+)\W*-\W*[0-9]{4}$)|(^[1-5](s|star)?[\s-]{1}(.+)[\s-]{1}[0-9]{4}$)/;
 
-export const sortCardByNameAscTierDisc = (card1: ICard, card2: ICard) => {
+export const sortCardByNameAscTierDiscUIDAsc = (card1: ICard, card2: ICard) => {
   if (card1.name === card2.name) {
     if (card1.tier > card2.tier) {
       return -1;
-    } else if (card1.tier > card2.tier) {
+    } else if (card1.tier < card2.tier) {
       return 1;
     } else {
-      return 0;
+      return card1.uid - card2.uid;
     }
   } else {
     if (card1.name < card2.name) {
