@@ -1,7 +1,8 @@
 import { ICard } from "model/card.model";
 import React, { Fragment, useEffect, useState } from "react";
+import { Filter } from "utils/constants";
 import {
-  cardSort,
+  sortCardByNameAscTierDisc,
   CARD_INPUT_REGEX,
   fireSubmitOnEnter,
   parseCard,
@@ -10,6 +11,7 @@ import {
 export interface ISubCategoryCardProps {
   category: string;
   invData: any;
+  filter: Filter;
   editingCategory: string;
   editingUID: number;
   updateInvData: (newInv: any) => void;
@@ -155,7 +157,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
             (c: ICard) => c.uid !== editingUID
           ),
           { ...parsedCard },
-        ].sort(cardSort),
+        ].sort(sortCardByNameAscTierDisc),
       });
 
       document
@@ -175,7 +177,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
         [editingCategory]: [
           ...invData[editingCategory],
           { ...parsedCard },
-        ].sort(cardSort),
+        ].sort(sortCardByNameAscTierDisc),
       });
     }
 
@@ -234,30 +236,42 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
           </div>
         )}
         <div className='hide-overflow'>
-          {(invData[category] as ICard[]).map((card, i) => (
-            <Fragment key={card.uid}>
-              {invData[category]?.[i - 1]?.name !== card.name && <hr />}
-              <div className={"card-line star" + card.tier} id={card.uid + ""}>
-                <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
-                <span
-                  className='edit-card-button unselectable'
-                  data-cat={category}
-                  data-uid={card.uid}
-                  onClick={editCard}
+          {(invData[category] as ICard[]).map((card, i) => {
+            const isSpare = invData[category]?.[i - 1]?.name === card.name;
+            const meargeable = isSpare
+              ? invData[category]?.[i - 1]?.tier === card.tier
+              : invData[category]?.[i + 1]?.name === card.name &&
+                invData[category]?.[i + 1]?.tier === card.tier;
+            return (
+              <Fragment key={card.uid}>
+                {!isSpare && <hr />}
+                <div
+                  className={`card-line star${card.tier} ${
+                    meargeable ? "mergeable" : "non-mergeable"
+                  }`}
+                  id={card.uid + ""}
                 >
-                  <b>&#9998;</b>
-                </span>
-                <span
-                  className='delete-card-button unselectable'
-                  data-cat={category}
-                  data-uid={card.uid}
-                  onClick={removeCard}
-                >
-                  <b>&times;</b>
-                </span>
-              </div>
-            </Fragment>
-          ))}
+                  <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
+                  <span
+                    className='edit-card-button unselectable'
+                    data-cat={category}
+                    data-uid={card.uid}
+                    onClick={editCard}
+                  >
+                    <b>&#9998;</b>
+                  </span>
+                  <span
+                    className='delete-card-button unselectable'
+                    data-cat={category}
+                    data-uid={card.uid}
+                    onClick={removeCard}
+                  >
+                    <b>&times;</b>
+                  </span>
+                </div>
+              </Fragment>
+            );
+          })}
         </div>
       </div>
     </div>

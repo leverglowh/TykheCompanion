@@ -1,4 +1,5 @@
 .main-container {
+  margin-top: 55px;
   display: inline-flex;
   line-height: normal !important;
 }
@@ -42,6 +43,7 @@ hr {
   border-radius: 0.25rem;
   background-color: #d2d2d2;
   padding: 12px 20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .error-log-index {
@@ -79,12 +81,17 @@ hr {
 
 .hide-overflow {
   overflow-y: auto;
-  max-height: 86vh;
+  max-height: 80vh;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card-line {
   position: relative;
   padding-right: 30px;
+}
+
+.mergeable {
+  font-weight: bold;
 }
 
 .edit-card-button {

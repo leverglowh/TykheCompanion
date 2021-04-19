@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import {
-  cardSort,
+  sortCardByNameAscTierDisc,
   dataCheck,
   fireSubmitOnEnter,
   parseCard,
@@ -12,6 +12,10 @@ import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import SubCategoryCard from "components/sub-category-card";
+import Navbar from "react-bootstrap/Navbar";
+import Nav from "react-bootstrap/Nav";
+import NavDropdown from "react-bootstrap/NavDropdown";
+import { Filter } from "utils/constants";
 
 const App = () => {
   const [invData, setInvData] = useState<any>(null);
@@ -27,6 +31,8 @@ const App = () => {
   const [errorLog, setErrorLog] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [isCreatingNewCat, setCreatingNewCat] = useState(false);
+
+  const [filter, setFilter] = useState<Filter>(Filter.None);
 
   const remoteSync = useCallback((data?: any) => {
     const binId = localStorage.getItem("binId");
@@ -114,7 +120,7 @@ const App = () => {
             localStorage.setItem("inv", JSON.stringify(inv));
           }
           localStorage.setItem("last-fetch", new Date().valueOf() + "");
-          localStorage.setItem('binId', binId);
+          localStorage.setItem("binId", binId);
           window.location.reload();
         } else {
           alert(
@@ -166,7 +172,7 @@ const App = () => {
   useEffect(() => {
     if (!invData) return;
     localStorage.setItem("inv", JSON.stringify(invData));
-    const binId = localStorage.getItem('binId');
+    const binId = localStorage.getItem("binId");
     binId && remoteSync(invData);
   }, [invData, remoteSync]);
 
@@ -280,7 +286,7 @@ const App = () => {
 
         if (keys.length === 0) {
           // Empty obj
-          invalidCounter ++;
+          invalidCounter++;
           tempLog.push("No lines found.");
         } else {
           keys.forEach(k => {
@@ -289,9 +295,9 @@ const App = () => {
               tempLog.push(k);
               return;
             }
-            sortedInv[k] = built_inv[k].sort(cardSort);
+            sortedInv[k] = built_inv[k].sort(sortCardByNameAscTierDisc);
           });
-  
+
           localStorage.setItem("inv", JSON.stringify(sortedInv));
         }
 
@@ -329,145 +335,201 @@ const App = () => {
       setEditingUID(0);
     }
   };
+
+  const handleFilterChange = (e: any) => {
+    e.persist();
+    const newFilter = e.target.dataset.filter;
+    if (newFilter === filter) return;
+    switch (newFilter) {
+      default:
+        setFilter(Filter.None);
+        break;
+    }
+  };
   return (
-    <div className='main-container'>
-      {!invData ? (
-        <div className='file-input-container'>
-          <div>
-            <div className='text-align-left'>
-              Hi, please upload inventory text file.
+    <>
+      {invData && (
+        <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect>
+          <Navbar.Brand>TC</Navbar.Brand>
+          <Navbar.Toggle aria-controls='basic-navbar-nav' />
+          <Navbar.Collapse id='basic-navbar-nav'>
+            <Nav className='mr-auto'>
+              <NavDropdown title='Sort' id='sort-dropdown'>
+                <NavDropdown.Item disabled active>
+                  by Name
+                </NavDropdown.Item>
+                <NavDropdown.Item disabled>by star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>by UID (WIP)</NavDropdown.Item>
+              </NavDropdown>
+              <NavDropdown title='Filter' id='filter-dropdown'>
+                <NavDropdown.Item
+                  active={filter === Filter.None}
+                  onClick={handleFilterChange}
+                >
+                  No Filter
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item disabled>5 star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>4 star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>3 star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>2 star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>1 star (WIP)</NavDropdown.Item>
+              </NavDropdown>
+            </Nav>
+            {/* <Form inline>
+              <FormControl
+                type='text'
+                placeholder='Search'
+                className='mr-sm-2'
+              />
+              <Button variant='outline-warning'>Search</Button>
+            </Form> */}
+          </Navbar.Collapse>
+        </Navbar>
+      )}
+      <div className='main-container'>
+        {!invData ? (
+          <div className='file-input-container'>
+            <div>
+              <div className='text-align-left'>
+                Hi, please upload inventory text file.
+              </div>
+              <br />
+              <input
+                type='file'
+                name='initial-inv-input'
+                id='initial-inv-input'
+                accept='text/plain'
+                onChange={handleInvInput}
+              />
             </div>
-            <br />
-            <input
-              type='file'
-              name='initial-inv-input'
-              id='initial-inv-input'
-              accept='text/plain'
-              onChange={handleInvInput}
-            />
+            <div>
+              <div className='text-align-left'>Or input the backup id:</div>
+              <div className='backup-id-input-container'>
+                <Form.Control
+                  placeholder='607b400f0ed6f819beae5284'
+                  id='backup-id-input'
+                  onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                    fireSubmitOnEnter(e, "backup-id-input-button")
+                  }
+                />
+                &nbsp;
+                <Button
+                  id='backup-id-input-button'
+                  onClick={handleBackupIdInput}
+                >
+                  Enter
+                </Button>
+              </div>
+            </div>
           </div>
-          <div>
-            <div className='text-align-left'>Or input the backup id:</div>
-            <div className='backup-id-input-container'>
+        ) : (
+          Object.keys(invData)
+            .sort()
+            .map(cat => {
+              return (
+                <SubCategoryCard
+                  key={cat}
+                  category={cat}
+                  filter={filter}
+                  invData={invData}
+                  editingCategory={editingCategory}
+                  editingUID={editingUID}
+                  updateInvData={updateInvData}
+                  updateRemoveInfo={updateRemoveInfo}
+                  updateEditingUID={updateEditingUID}
+                  updateCreatingNewCat={updateCreatingNewCat}
+                  updateEditingCategory={updateEditingCategory}
+                />
+              );
+            })
+        )}
+        <a
+          id='downloadJSON'
+          href={
+            "data:text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(invData))
+          }
+          download='inv.json'
+          style={{ display: "none" }}
+        >
+          DOWNLOAD JSON
+        </a>
+        {removeInfo && (
+          <Modal show backdrop='static' keyboard={false}>
+            <Modal.Header>Are you sure?</Modal.Header>
+            <Modal.Body>
+              <Alert variant='danger'>
+                Are you sure you want to remove this?
+                <br />
+                <b>
+                  {removeInfo.tier
+                    ? `${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}`
+                    : `Category: ${removeInfo.cat}`}
+                </b>
+              </Alert>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant='secondary' onClick={abortRemove}>
+                Don't remove
+              </Button>
+              <Button variant='danger' onClick={confirmRemove}>
+                Yes, do it.
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        )}
+        {showResult && errorLog.length > 0 && (
+          <Modal show backdrop='static' keyboard={false}>
+            <Modal.Header>Error encountered</Modal.Header>
+            <Modal.Body>
+              <Alert variant='danger'>
+                {errorLog.length} error(s) encountered in these lines:
+              </Alert>
+              <div className='import-error-log-container'>
+                {errorLog.map((l, i) => (
+                  <div>
+                    <span className='error-log-index unselectable'>
+                      {i + 1}&nbsp;
+                    </span>
+                    {l}
+                  </div>
+                ))}
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant='secondary' onClick={closeImportResultModal}>
+                OK
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        )}
+        {isCreatingNewCat && (
+          <Modal show>
+            <Modal.Header closeButton>New sub category</Modal.Header>
+            <Modal.Body>
               <Form.Control
-                placeholder='607b400f0ed6f819beae5284'
-                id='backup-id-input'
+                id='new-subcat-input'
+                placeholder='Marvel Cinematic Universe'
+                autoFocus
                 onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                  fireSubmitOnEnter(e, "backup-id-input-button")
+                  fireSubmitOnEnter(e, "new-subcat-input-button")
                 }
               />
-              &nbsp;
-              <Button id='backup-id-input-button' onClick={handleBackupIdInput}>
-                Enter
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                variant='primary'
+                id='new-subcat-input-button'
+                onClick={addSub}
+              >
+                ADD
               </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        Object.keys(invData)
-          .sort()
-          .map(cat => {
-            return (
-              <SubCategoryCard
-                key={cat}
-                category={cat}
-                invData={invData}
-                editingCategory={editingCategory}
-                editingUID={editingUID}
-                updateInvData={updateInvData}
-                updateRemoveInfo={updateRemoveInfo}
-                updateEditingUID={updateEditingUID}
-                updateCreatingNewCat={updateCreatingNewCat}
-                updateEditingCategory={updateEditingCategory}
-              />
-            );
-          })
-      )}
-      <a
-        id='downloadJSON'
-        href={
-          "data:text/json;charset=utf-8," +
-          encodeURIComponent(JSON.stringify(invData))
-        }
-        download='inv.json'
-        style={{ display: "none" }}
-      >
-        DOWNLOAD JSON
-      </a>
-      {removeInfo && (
-        <Modal show backdrop='static' keyboard={false}>
-          <Modal.Header>Are you sure?</Modal.Header>
-          <Modal.Body>
-            <Alert variant='danger'>
-              Are you sure you want to remove this?
-              <br />
-              <b>
-                {removeInfo.tier
-                  ? `${removeInfo.tier}s - ${removeInfo.name} - ${removeInfo.uid}`
-                  : `Category: ${removeInfo.cat}`}
-              </b>
-            </Alert>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant='secondary' onClick={abortRemove}>
-              Don't remove
-            </Button>
-            <Button variant='danger' onClick={confirmRemove}>
-              Yes, do it.
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
-      {showResult && errorLog.length > 0 && (
-        <Modal show backdrop='static' keyboard={false}>
-          <Modal.Header>Error encountered</Modal.Header>
-          <Modal.Body>
-            <Alert variant='danger'>
-              {errorLog.length} error(s) encountered in these lines:
-            </Alert>
-            <div className='import-error-log-container'>
-              {errorLog.map((l, i) => (
-                <div>
-                  <span className='error-log-index unselectable'>
-                    {i + 1}&nbsp;
-                  </span>
-                  {l}
-                </div>
-              ))}
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant='secondary' onClick={closeImportResultModal}>
-              OK
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
-      {isCreatingNewCat && (
-        <Modal show>
-          <Modal.Header closeButton>New sub category</Modal.Header>
-          <Modal.Body>
-            <Form.Control
-              id='new-subcat-input'
-              placeholder='Marvel Cinematic Universe'
-              autoFocus
-              onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                fireSubmitOnEnter(e, "new-subcat-input-button")
-              }
-            />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant='primary'
-              id='new-subcat-input-button'
-              onClick={addSub}
-            >
-              ADD
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
-    </div>
+            </Modal.Footer>
+          </Modal>
+        )}
+      </div>
+    </>
   );
 };
 
