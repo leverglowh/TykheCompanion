@@ -84,7 +84,7 @@ const MergeablesModal: React.FC<IMergeablesModalProps> = props => {
                   {cat}
                 </div>
                 {Object.keys(filteredMergeables[cat]).map(cardName => (
-                  <div>
+                  <div key={`mergeable-${cat}-${cardName}`}>
                     <div>
                       <Form.Check type="checkbox">
                         <Form.Check.Input type="checkbox" id={`merge-${cardName}`} onChange={handleMerge} data-cat={cat} data-tier={filteredMergeables[cat][cardName][0].tier} data-name={cardName} data-pair={`${filteredMergeables[cat][cardName][0].uid}-${filteredMergeables[cat][cardName][1].uid}`}/>
@@ -100,6 +100,7 @@ const MergeablesModal: React.FC<IMergeablesModalProps> = props => {
                         <div
                           className={`card-line star${card.tier}`}
                           id={"mergeable-" + card.uid}
+                          key={`mergeable-${card.uid}`}
                         >
                           <span>{`${card.tier}s - ${card.name} - ${card.uid}`}</span>
                         </div>
