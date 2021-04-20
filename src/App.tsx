@@ -372,7 +372,7 @@ const App = () => {
   return (
     <>
       {invData && (
-        <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect>
+        <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect id="header">
           <Navbar.Brand>TC</Navbar.Brand>
           <Navbar.Toggle aria-controls='basic-navbar-nav' />
           <Navbar.Collapse id='basic-navbar-nav'>

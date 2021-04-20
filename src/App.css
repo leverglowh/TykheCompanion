@@ -5,8 +5,12 @@
   align-items: center;
 }
 
+#header {
+  height: 60px;
+}
+
 .main-container {
-  margin-top: 70px;
+  margin-top: 60px;
   display: inline-flex;
   line-height: normal !important;
 }
@@ -88,7 +92,7 @@ hr {
 
 .hide-overflow {
   overflow-y: auto;
-  max-height: 80vh;
+  max-height: calc(100vh - 150px);
   -webkit-overflow-scrolling: touch;
 }
 
