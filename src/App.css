@@ -9,6 +9,11 @@
   height: 60px;
 }
 
+.cards-count {
+  font-size: small;
+  color: #ffc107;
+}
+
 .main-container {
   margin-top: 60px;
   display: inline-flex;

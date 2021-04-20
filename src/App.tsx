@@ -369,11 +369,16 @@ const App = () => {
     });
   };
 
+  let cardsCount = 0;
+  for (const cat in invData) {
+    cardsCount = cardsCount + invData[cat].length;
+  }
+
   return (
     <>
       {invData && (
         <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect id="header">
-          <Navbar.Brand>TC</Navbar.Brand>
+          <Navbar.Brand>TC&nbsp;<span className="cards-count">{cardsCount}</span></Navbar.Brand>
           <Navbar.Toggle aria-controls='basic-navbar-nav' />
           <Navbar.Collapse id='basic-navbar-nav'>
             <Nav className='mr-auto'>
