@@ -248,14 +248,13 @@ const App = () => {
       var reader = new FileReader();
       reader.readAsText(file, "UTF-8");
       reader.onload = function (evt) {
-        const removed_locks = (evt?.target?.result as string)?.replace(
-          ":lock:",
-          ""
-        );
+        const response_text = evt?.target?.result as string;
 
         const built_inv: any = {};
         let last_cat = "";
-        const lines = removed_locks.split("\n");
+        const lines = response_text
+          .split("\n")
+          .map(textLine => textLine.replace(" :lock:", ""));
         let invalidCounter = 0;
         const tempLog: string[] = [];
         lines.forEach(line => {
