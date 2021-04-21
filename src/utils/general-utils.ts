@@ -15,7 +15,7 @@ export const sortCardByNameAscTierDiscUIDAsc = (card1: ICard, card2: ICard) => {
     if (card1.name < card2.name) {
       return -1;
     } else {
-      return 1; 
+      return 1;
     }
   }
 };
@@ -33,7 +33,9 @@ export const parseCard = (line: string) => {
       ...line.split("-").map((word: string) => word.trim()),
     ].filter(w => w.length > 0); // remove empty words
     uid = Number(temp_vals[temp_vals.length - 1]);
-    name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
+    name = line
+      .slice(line.indexOf(temp_vals[1]), line.indexOf(uid + "") - 1)
+      .trim();
   } else {
     if (!/^[1-5][^0-9]+/.test(line)) return null;
     let temp_vals = [];
