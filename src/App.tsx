@@ -369,16 +369,38 @@ const App = () => {
     });
   };
 
-  let cardsCount = 0;
+  let totalCount = 0;
+  const tierCounts = { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0}
   for (const cat in invData) {
-    cardsCount = cardsCount + invData[cat].length;
+    totalCount = totalCount + invData[cat].length;
+    for (let i=0; i<invData[cat].length; i++) {
+      switch (invData[cat][i].tier) {
+        case 1:
+          tierCounts.tier1 ++;
+          break;
+        case 2:
+          tierCounts.tier2 ++;
+          break;
+        case 3:
+          tierCounts.tier3 ++;
+          break;
+        case 4:
+          tierCounts.tier4 ++;
+          break;
+        case 5:
+          tierCounts.tier5 ++;
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   return (
     <>
       {invData && (
         <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect id="header">
-          <Navbar.Brand>TC&nbsp;<span className="cards-count">{cardsCount}</span></Navbar.Brand>
+          <Navbar.Brand>TC&nbsp;<span className="cards-count">{totalCount}</span></Navbar.Brand>
           <Navbar.Toggle aria-controls='basic-navbar-nav' />
           <Navbar.Collapse id='basic-navbar-nav'>
             <Nav className='mr-auto'>
@@ -397,11 +419,11 @@ const App = () => {
                   No Filter
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item disabled>5 star (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>4 star (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>3 star (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>2 star (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>1 star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>5 star ({tierCounts.tier5}) (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>4 star ({tierCounts.tier4}) (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>3 star ({tierCounts.tier3}) (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>2 star ({tierCounts.tier2}) (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>1 star ({tierCounts.tier1}) (WIP)</NavDropdown.Item>
               </NavDropdown>
             </Nav>
             <Button variant='outline-warning' onClick={toggleMergeablesModal}>
