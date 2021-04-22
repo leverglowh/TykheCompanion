@@ -36,6 +36,9 @@ export const parseCard = (line: string) => {
     name = line
       .slice(line.indexOf(temp_vals[1]), line.indexOf(uid + "") - 1)
       .trim();
+    if (name[name.length - 1] === '-') {
+      name = name.slice(0, name.length-2).trim();
+    }
   } else {
     if (!/^[1-5][^0-9]+/.test(line)) return null;
     let temp_vals = [];
