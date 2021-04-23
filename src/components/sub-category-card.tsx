@@ -193,7 +193,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
   return (
     <div className='cat'>
       <div className='cat-header'>
-        <b>{category}</b>
+        <b title={invData[category].length}>{category}</b>
         <span
           className='abs-right-button'
           title='Add a new card'
