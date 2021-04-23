@@ -51,6 +51,7 @@ export const handleSort = (sort: Sort) => (card1: ICard, card2: ICard) => {
 };
 
 export const parseCard = (line: string) => {
+  console.log(line);
   let tier = 0;
   let uid = 0;
   let name = "";
@@ -81,7 +82,12 @@ export const parseCard = (line: string) => {
 
     tier = Number(temp_vals[0].match(numberPattern)?.[0]) || 0;
     uid = Number(temp_vals[temp_vals.length - 1]);
-    name = temp_vals.slice(1, temp_vals.length - 1).join(" - ");
+    name = line
+      .slice(line.indexOf(temp_vals[1]), line.indexOf(uid + "") - 1)
+      .trim();
+    if (name[name.length - 1] === '-') {
+      name = name.slice(0, name.length-2).trim();
+    }
 
     if (!dataCheck(tier, name, uid)) {
       // retry with space as split string
