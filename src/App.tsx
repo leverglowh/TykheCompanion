@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import {
-  sortCardByNameAscTierDiscUIDAsc,
   dataCheck,
   fireSubmitOnEnter,
   parseCard,
+  handleSort,
 } from "./utils/general-utils";
 import { ICard } from "./model/card.model";
-import { Filter } from "utils/constants";
+import { Filter, Sort } from "utils/constants";
 import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
@@ -39,6 +39,7 @@ const App = () => {
   const [showMergeablesModal, setShowMergeablesModal] = useState(false);
 
   const [filter, setFilter] = useState<Filter>(Filter.None);
+  const [sort, setSort] = useState<Sort>(Sort.NameFirst);
 
   const remoteSync = useCallback((data?: any) => {
     const binId = localStorage.getItem("binId");
@@ -300,7 +301,7 @@ const App = () => {
               tempLog.push(k);
               return;
             }
-            sortedInv[k] = built_inv[k].sort(sortCardByNameAscTierDiscUIDAsc);
+            sortedInv[k] = built_inv[k].sort(handleSort(sort));
           });
 
           localStorage.setItem("inv", JSON.stringify(sortedInv));
@@ -362,7 +363,7 @@ const App = () => {
     const newList = [
       ...(invData?.[cat]?.filter(c => !uids.includes(c.uid)) || []),
       { ...keptCard, tier: keptCard.tier + 1 },
-    ].sort(sortCardByNameAscTierDiscUIDAsc);
+    ].sort(handleSort(sort));
     setInvData({
       ...invData,
       [cat]: newList,
@@ -370,25 +371,25 @@ const App = () => {
   };
 
   let totalCount = 0;
-  const tierCounts = { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0}
+  const tierCounts = { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 };
   for (const cat in invData) {
     totalCount = totalCount + invData[cat].length;
-    for (let i=0; i<invData[cat].length; i++) {
+    for (let i = 0; i < invData[cat].length; i++) {
       switch (invData[cat][i].tier) {
         case 1:
-          tierCounts.tier1 ++;
+          tierCounts.tier1++;
           break;
         case 2:
-          tierCounts.tier2 ++;
+          tierCounts.tier2++;
           break;
         case 3:
-          tierCounts.tier3 ++;
+          tierCounts.tier3++;
           break;
         case 4:
-          tierCounts.tier4 ++;
+          tierCounts.tier4++;
           break;
         case 5:
-          tierCounts.tier5 ++;
+          tierCounts.tier5++;
           break;
         default:
           break;
@@ -396,19 +397,44 @@ const App = () => {
     }
   }
 
+  const handleSortChange = (e: any) => {
+    e.persist();
+    const sortCriteria = e.target?.dataset?.sort;
+    if (sortCriteria === sort) return;
+    setSort(sortCriteria);
+  };
+
   return (
     <>
       {invData && (
-        <Navbar bg='dark' variant='dark' fixed='top' collapseOnSelect id="header">
-          <Navbar.Brand>TC&nbsp;<span className="cards-count">{totalCount}</span></Navbar.Brand>
+        <Navbar
+          bg='dark'
+          variant='dark'
+          fixed='top'
+          collapseOnSelect
+          id='header'
+        >
+          <Navbar.Brand>
+            TC&nbsp;<span className='cards-count'>{totalCount}</span>
+          </Navbar.Brand>
           <Navbar.Toggle aria-controls='basic-navbar-nav' />
           <Navbar.Collapse id='basic-navbar-nav'>
             <Nav className='mr-auto'>
               <NavDropdown title='Sort' id='sort-dropdown'>
-                <NavDropdown.Item disabled active>
+                <NavDropdown.Item
+                  data-sort={Sort.NameFirst}
+                  active={sort === Sort.NameFirst}
+                  onClick={handleSortChange}
+                >
                   by Name
                 </NavDropdown.Item>
-                <NavDropdown.Item disabled>by star (WIP)</NavDropdown.Item>
+                <NavDropdown.Item
+                  data-sort={Sort.TierFirst}
+                  active={sort === Sort.TierFirst}
+                  onClick={handleSortChange}
+                >
+                  by Star
+                </NavDropdown.Item>
                 <NavDropdown.Item disabled>by UID (WIP)</NavDropdown.Item>
               </NavDropdown>
               <NavDropdown title='Filter' id='filter-dropdown'>
@@ -419,11 +445,21 @@ const App = () => {
                   No Filter
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item disabled>5 star ({tierCounts.tier5}) (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>4 star ({tierCounts.tier4}) (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>3 star ({tierCounts.tier3}) (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>2 star ({tierCounts.tier2}) (WIP)</NavDropdown.Item>
-                <NavDropdown.Item disabled>1 star ({tierCounts.tier1}) (WIP)</NavDropdown.Item>
+                <NavDropdown.Item disabled>
+                  5 star ({tierCounts.tier5}) (WIP)
+                </NavDropdown.Item>
+                <NavDropdown.Item disabled>
+                  4 star ({tierCounts.tier4}) (WIP)
+                </NavDropdown.Item>
+                <NavDropdown.Item disabled>
+                  3 star ({tierCounts.tier3}) (WIP)
+                </NavDropdown.Item>
+                <NavDropdown.Item disabled>
+                  2 star ({tierCounts.tier2}) (WIP)
+                </NavDropdown.Item>
+                <NavDropdown.Item disabled>
+                  1 star ({tierCounts.tier1}) (WIP)
+                </NavDropdown.Item>
               </NavDropdown>
             </Nav>
             <Button variant='outline-warning' onClick={toggleMergeablesModal}>
@@ -486,6 +522,7 @@ const App = () => {
                   category={cat}
                   filter={filter}
                   invData={invData}
+                  sort={sort}
                   editingCategory={editingCategory}
                   editingUID={editingUID}
                   updateInvData={updateInvData}

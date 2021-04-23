@@ -1,4 +1,5 @@
 import { ICard } from "model/card.model";
+import { Sort } from './constants';
 
 export const CARD_INPUT_REGEX = /(^:[1-5](star128|_star):\W*-\W*(.+)\W*-\W*[0-9]{4}$)|(^[1-5](s|star)?[\s-]{1}(.+)[\s-]{1}[0-9]{4}$)/;
 
@@ -17,6 +18,35 @@ export const sortCardByNameAscTierDiscUIDAsc = (card1: ICard, card2: ICard) => {
     } else {
       return 1;
     }
+  }
+};
+
+export const sortCardByTierDiscNameAscUIDAsc = (card1: ICard, card2: ICard) => {
+  if (card1.tier === card2.tier) {
+    if (card1.name < card2.name) {
+      return -1;
+    } else if (card1.name > card2.name) {
+      return 1;
+    } else {
+      return card1.uid - card2.uid;
+    }
+  } else {
+    if (card1.tier > card2.tier) {
+      return -1;
+    } else {
+      return 1;
+    }
+  }
+}
+
+export const handleSort = (sort: Sort) => (card1: ICard, card2: ICard) => {
+  switch (sort) {
+    case Sort.TierFirst:
+      return sortCardByTierDiscNameAscUIDAsc(card1, card2);
+    case Sort.NameFirst:
+      return sortCardByNameAscTierDiscUIDAsc(card1, card2);
+    default:
+      return sortCardByNameAscTierDiscUIDAsc(card1, card2);
   }
 };
 

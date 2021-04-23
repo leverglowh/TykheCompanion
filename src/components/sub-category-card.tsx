@@ -1,11 +1,12 @@
 import { ICard } from "model/card.model";
 import React, { Fragment, useEffect, useState } from "react";
-import { Filter } from "utils/constants";
+import { Filter, Sort } from "utils/constants";
 import {
   sortCardByNameAscTierDiscUIDAsc,
   CARD_INPUT_REGEX,
   fireSubmitOnEnter,
   parseCard,
+  handleSort,
 } from "utils/general-utils";
 
 export interface ISubCategoryCardProps {
@@ -14,6 +15,7 @@ export interface ISubCategoryCardProps {
   filter: Filter;
   editingCategory: string;
   editingUID: number;
+  sort: Sort;
   updateInvData: (newInv: any) => void;
   updateEditingUID: (uid: number) => void;
   updateRemoveInfo: (info: any) => void;
@@ -25,6 +27,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
   const {
     category,
     invData,
+    sort,
     editingUID,
     editingCategory,
     updateInvData,
@@ -177,7 +180,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
         [editingCategory]: [
           ...invData[editingCategory],
           { ...parsedCard },
-        ].sort(sortCardByNameAscTierDiscUIDAsc),
+        ].sort(handleSort(sort)),
       });
     }
 
@@ -236,7 +239,7 @@ const SubCategoryCard: React.FC<ISubCategoryCardProps> = props => {
           </div>
         )}
         <div className='hide-overflow'>
-          {(invData[category] as ICard[]).map((card, i) => {
+          {(invData[category] as ICard[]).sort(handleSort(sort)).map((card, i) => {
             const isSpare = invData[category]?.[i - 1]?.name === card.name;
             const meargeable =
               (invData[category]?.[i - 1]?.tier === card.tier &&

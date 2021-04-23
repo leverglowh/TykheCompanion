@@ -6,3 +6,8 @@ export enum Filter {
   Tier2 = "Tier2",
   Tier1 = "Tier1",
 };
+
+export enum Sort {
+  NameFirst = "sortCardByNameAscTierDiscUIDAsc",
+  TierFirst = "sortCardByTierDiscNameAscUIDAsc",
+};
